@@ -19,6 +19,7 @@ yarn-error.log*
 # ==========================================
 backend/HELP.md
 backend/target/
+backend/bin
 backend/.mvn/wrapper/maven-wrapper.jar
 backend/src/main/resources/application-secret.yml
 !**/src/main/**/target/
