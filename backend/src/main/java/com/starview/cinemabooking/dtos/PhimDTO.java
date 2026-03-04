@@ -10,8 +10,8 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PhimDTO {
-	private Integer id;
-	
+    private Integer id;
+
     private String tenPhim;
 
     private Float giaGoc;
@@ -19,4 +19,6 @@ public class PhimDTO {
     private Integer thoiLuongPhut;
 
     private String trailerUrl;
+
+    private Boolean isActive;
 }
