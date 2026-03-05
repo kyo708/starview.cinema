@@ -6,6 +6,15 @@
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease; /* Hiệu ứng mượt mà */
+  cursor: pointer;
+  position: relative;
+}
+
+/* Hiệu ứng khi di chuột vào thẻ phim */
+.movie-card:hover {
+  transform: scale(1.03); /* Phóng to nhẹ */
+  box-shadow: 0 10px 20px rgba(0,0,0,0.2); /* Đổ bóng sâu hơn */
 }
 
 /* Căn chỉnh ảnh poster */
@@ -37,17 +46,20 @@
 
 /* Định dạng nút Mua Vé */
 .book-btn {
-  background-color: #e32222;
+  background: linear-gradient(45deg, #e32222, #c11c1c); /* Màu gradient sang trọng */
   color: white;
   border: none;
-  padding: 10px;
+  padding: 12px;
   border-radius: 4px;
   cursor: pointer;
   font-weight: bold;
   margin-top: auto; /* Đẩy nút xuống dưới cùng */
   width: 100%;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: background 0.3s;
 }
 
 .book-btn:hover {
-  background-color: #c11c1c;
+  background: linear-gradient(45deg, #c11c1c, #9a1616);
 }

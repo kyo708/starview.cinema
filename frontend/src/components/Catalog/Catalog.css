@@ -1,17 +1,48 @@
 /* Thiết lập nền và phông chữ cho toàn bộ trang */
 .catalog-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-  background-color: #fdfbf7; /* Màu nền vàng nhạt giống trong ảnh */
-  font-family: Arial, sans-serif;
+  max-width: 100%;
+  margin: 0;
+  padding: 40px 20px;
+  background-color: #fdfbf7;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: #333;
+  min-height: 100vh;
+}
+
+.catalog-container h1 {
+  text-align: center;
+  font-size: 2rem;
+  color: #e32222;
+  margin-bottom: 40px;
+  text-transform: uppercase;
+  border-bottom: 2px solid #e32222;
+  display: inline-block;
+  padding-bottom: 10px;
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 /* Chia lưới 4 cột cho danh sách phim */
 .movie-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr); /* Tạo 4 cột có kích thước bằng nhau */
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* Tự động chia cột linh hoạt */
   gap: 30px; /* Khoảng cách giữa các phim */
   margin-top: 20px;
+}
+
+/* Hiệu ứng Loading Spinner xoay tròn */
+.loading-spinner {
+  border: 5px solid #f3f3f3; /* Màu xám nhạt */
+  border-top: 5px solid #e32222; /* Màu đỏ chủ đạo */
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+  margin: 50px auto; /* Căn giữa */
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }

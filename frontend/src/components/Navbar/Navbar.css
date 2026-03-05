@@ -1,0 +1,78 @@
+.header-container {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.95); /* Nền trắng mờ */
+  backdrop-filter: blur(10px); /* Hiệu ứng kính mờ */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); /* Đổ bóng nhẹ */
+  transition: all 0.3s ease;
+}
+
+
+.top-nav {
+  background-color: #fdfbf7;
+  text-align: right;
+  padding: 5px 10%;
+  font-size: 0.8rem;
+  color: #666;
+  border-bottom: 1px solid #ddd;
+}
+
+.top-nav span {
+  margin: 0 10px;
+  cursor: pointer;
+}
+
+.top-nav span:hover {
+  color: #e71a0f;
+}
+
+.main-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 10%;
+}
+
+.logo h1 {
+  color: #e71a0f;
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 900;
+}
+
+.nav-links {
+  list-style: none;
+  display: flex;
+  gap: 30px;
+  margin: 0;
+  padding: 0;
+  font-weight: 600;
+}
+
+.nav-links li {
+  cursor: pointer;
+  color: #333;
+}
+
+.nav-links li:hover, .nav-links li.active {
+  color: #e71a0f;
+}
+
+/* Nút mua vé */
+.buy-ticket-btn {
+  background: linear-gradient(45deg, #e71a0f, #c11c1c);
+  color: white;
+  padding: 10px 25px;
+  border-radius: 25px; /* Bo tròn nút */
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(231, 26, 15, 0.3);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.buy-ticket-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(231, 26, 15, 0.4);
+}
