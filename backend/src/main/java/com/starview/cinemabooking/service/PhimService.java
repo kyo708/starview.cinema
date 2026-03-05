@@ -48,6 +48,9 @@ public class PhimService {
                 existingPhim.setGiaGoc(phimDTO.getGiaGoc());
                 existingPhim.setThoiLuongPhut(phimDTO.getThoiLuongPhut());
                 existingPhim.setTrailerUrl(phimDTO.getTrailerUrl());
+                existingPhim.setPosterUrl(phimDTO.getPosterUrl());
+                existingPhim.setDanhGia(phimDTO.getDanhGia());
+                existingPhim.setTheLoai(phimDTO.getTheLoai());
 
                 Phim updatedPhim = repository.save(existingPhim);
                 return PhimMapper.toDTO(updatedPhim);
