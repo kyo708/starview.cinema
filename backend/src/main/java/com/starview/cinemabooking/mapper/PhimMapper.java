@@ -14,6 +14,9 @@ public class PhimMapper {
                 phim.getGiaGoc(),
                 phim.getThoiLuongPhut(),
                 phim.getTrailerUrl(),
+                phim.getPosterUrl(),
+                phim.getDanhGia(),
+                phim.getTheLoai(),
                 phim.isActive());
     }
 
@@ -28,6 +31,9 @@ public class PhimMapper {
         phim.setGiaGoc(phimDto.getGiaGoc());
         phim.setThoiLuongPhut(phimDto.getThoiLuongPhut());
         phim.setTrailerUrl(phimDto.getTrailerUrl());
+        phim.setPosterUrl(phimDto.getPosterUrl());
+        phim.setDanhGia(phimDto.getDanhGia());
+        phim.setTheLoai(phimDto.getTheLoai());
 
         // Ensure new movies are active by default
         phim.setActive(true);

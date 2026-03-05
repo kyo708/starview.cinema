@@ -19,6 +19,12 @@ public class PhimDTO {
     private Integer thoiLuongPhut;
 
     private String trailerUrl;
+    
+    private String posterUrl;
+    
+    private Float danhGia;
+    
+    private String theLoai;
 
     private Boolean isActive;
 }
