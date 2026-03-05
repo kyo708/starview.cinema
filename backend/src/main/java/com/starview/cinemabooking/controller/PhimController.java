@@ -21,8 +21,14 @@ public class PhimController {
 
 	// Public endpoint - Get active movies for customers
 	@GetMapping
-	public List<PhimDTO> getPhimDangChieu() {
-		return phimService.getActiveMovies();
+	public ResponseEntity<List<PhimDTO>> getPhimDangChieu() {
+		return ResponseEntity.ok(phimService.getActiveMovies());
+	}
+	
+	// Public endpoint - Get a specific movie by ID for hydration/details
+	@GetMapping("/{id}")
+	public ResponseEntity<PhimDTO> getMovieById(@PathVariable Integer id) {
+		return ResponseEntity.ok(phimService.getMovieById(id));
 	}
 
 	// Staff endpoints - Manage movie catalog

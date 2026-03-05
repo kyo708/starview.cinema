@@ -23,6 +23,13 @@ public class PhimService {
                                 .map(PhimMapper::toDTO)
                                 .collect(Collectors.toList());
         }
+        
+        // Fetch a single movie to populate the frontend Edit form
+        public PhimDTO getMovieById(Integer id) {
+            Phim phim = repository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Movie not found with ID: " + id));
+            return PhimMapper.toDTO(phim);
+        }
 
         // #19: Create new movie
         public PhimDTO createMovie(PhimDTO phimDTO) {

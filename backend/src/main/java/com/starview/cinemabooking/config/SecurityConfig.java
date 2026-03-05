@@ -19,7 +19,9 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints
+                		// Whitelist the Swagger UI and OpenAPI docs so anyone can view them (For Testing, temporary)
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                		// Public endpoints
                         .requestMatchers("/phim").permitAll()
                         // Staff endpoints require STAFF role
                         .requestMatchers("/phim/staff/**").hasRole("STAFF")
