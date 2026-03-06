@@ -28,6 +28,15 @@ public class Phim {
     @Column(name = "trailer_url")
     private String trailerUrl;
     
+    @Column(name = "poster_url")
+    private String posterUrl;
+    
+    @Column(name = "danh_gia")
+    private Float danhGia;
+    
+    @Column(name = "the_loai")
+    private String theLoai;
+    
     // Default to true so new movies show up automatically
     @Column(name = "is_active", nullable = false)
     private boolean isActive = true;

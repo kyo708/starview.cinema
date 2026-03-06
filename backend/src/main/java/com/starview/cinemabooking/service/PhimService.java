@@ -1,0 +1,75 @@
+package com.starview.cinemabooking.service;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+
+import com.starview.cinemabooking.dtos.PhimDTO;
+import com.starview.cinemabooking.mapper.PhimMapper;
+import com.starview.cinemabooking.model.Phim;
+import com.starview.cinemabooking.repository.PhimRepository;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class PhimService {
+        private final PhimRepository repository;
+
+        public List<PhimDTO> getActiveMovies() {
+                return repository.findByIsActiveTrue()
+                                .stream()
+                                .map(PhimMapper::toDTO)
+                                .collect(Collectors.toList());
+        }
+        
+        // Fetch a single movie to populate the frontend Edit form
+        public PhimDTO getMovieById(Integer id) {
+            Phim phim = repository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Movie not found with ID: " + id));
+            return PhimMapper.toDTO(phim);
+        }
+
+        // #19: Create new movie
+        public PhimDTO createMovie(PhimDTO phimDTO) {
+                Phim phim = PhimMapper.toPhim(phimDTO);
+                Phim savedPhim = repository.save(phim);
+                return PhimMapper.toDTO(savedPhim);
+        }
+
+        // #19: Update existing movie
+        public PhimDTO updateMovie(Integer id, PhimDTO phimDTO) {
+                Phim existingPhim = repository.findById(id)
+                                .orElseThrow(() -> new RuntimeException("Phim not found with id: " + id));
+
+                // Update fields
+                existingPhim.setTenPhim(phimDTO.getTenPhim());
+                existingPhim.setGiaGoc(phimDTO.getGiaGoc());
+                existingPhim.setThoiLuongPhut(phimDTO.getThoiLuongPhut());
+                existingPhim.setTrailerUrl(phimDTO.getTrailerUrl());
+                existingPhim.setPosterUrl(phimDTO.getPosterUrl());
+                existingPhim.setDanhGia(phimDTO.getDanhGia());
+                existingPhim.setTheLoai(phimDTO.getTheLoai());
+
+                Phim updatedPhim = repository.save(existingPhim);
+                return PhimMapper.toDTO(updatedPhim);
+        }
+
+        // #20: Disable movie (soft delete)
+        public void disableMovie(Integer id) {
+                Phim phim = repository.findById(id)
+                                .orElseThrow(() -> new RuntimeException("Phim not found with id: " + id));
+
+                phim.setActive(false);
+                repository.save(phim);
+        }
+
+        // Get all movies (including inactive) for staff management
+        public List<PhimDTO> getAllMovies() {
+                return repository.findAll()
+                                .stream()
+                                .map(PhimMapper::toDTO)
+                                .collect(Collectors.toList());
+        }
+}
