@@ -14,13 +14,13 @@ public class DataSeeder {
 	@Bean
     CommandLineRunner initDatabase(PhimRepository phimRepository) {
         return args -> {
-            // Only insert if the table is completely empty
-            if (phimRepository.count() == 0) {
-                
+            // Xóa dữ liệu cũ để cập nhật lại từ đầu (Reset DB mỗi khi chạy lại App)
+            phimRepository.deleteAll();
+
                 Phim phim1 = new Phim();
                 phim1.setTenPhim("Dune: Hành Tinh Cát - Phần 2");
                 phim1.setGiaGoc(120000.0f);
-                phim1.setThoiLuongPhut(166);
+                phim1.setThoiLuongPhut(16);
                 phim1.setTrailerUrl("https://www.youtube.com/watch?v=Way9Dexny3w");
                 phim1.setPosterUrl("https://image.tmdb.org/t/p/w500/8b8R8l88ILwM7t3zyZOG1TaROi3.jpg");
                 phim1.setTheLoai("Viễn tưởng, Hành động");
@@ -69,7 +69,7 @@ public class DataSeeder {
                 
                 Phim phim6 = new Phim();
                 phim6.setTenPhim("Exhuma: Quật Mộ Trùng Ma");
-                phim6.setGiaGoc(110000.0f);
+                phim6.setGiaGoc(11000.0f);
                 phim6.setThoiLuongPhut(134);
                 phim6.setTrailerUrl("https://www.youtube.com/watch?v=7LH-TIcPqks");
                 phim6.setPosterUrl("https://image.tmdb.org/t/p/w500/pQYHouPsDf32FhIKYB72laNSMod.jpg");
@@ -105,11 +105,10 @@ public class DataSeeder {
                 phim9.setPosterUrl("https://image.tmdb.org/t/p/w500/vpnVM9B6NMmQpWeZvzLvDESb2QY.jpg");
                 phim9.setTheLoai("Hidden");
                 phim9.setDanhGia(0.0f);
-                phim9.setActive(false); 
+                phim9.setActive(true); 
 
                 phimRepository.saveAll(Arrays.asList(phim1, phim2, phim3, phim4, phim5, phim6, phim7, phim8, phim9));
                 System.out.println("✅ Mock movie data successfully seeded!");
-            }
         };
     }
 }
