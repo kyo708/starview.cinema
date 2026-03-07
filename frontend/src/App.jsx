@@ -1,14 +1,27 @@
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Catalog from './components/Catalog/Catalog.jsx';
 import Navbar from './components/Navbar/Navbar.jsx';
+import AdminMovieManager from './components/Admin/AdminMovieManager';
 import './App.css';
 
 function App() {
   return (
-    <div>
-      {/* Đây là cách chúng ta gọi linh kiện Catalog ra để hiển thị */}
-      <Navbar />
-      <Catalog /> 
-    </div>
+    <Router>
+      <div>
+        <Routes>
+          {/* Route cho khách hàng: Trang chủ hiển thị Navbar và Danh sách phim */}
+          <Route path="/" element={
+            <>
+              <Navbar />
+              <Catalog />
+            </>
+          } />
+
+          {/* Route cho nhân viên: Trang quản lý phim */}
+          <Route path="/admin" element={<AdminMovieManager />} />
+        </Routes>
+      </div>
+    </Router>
   )
 }
 
