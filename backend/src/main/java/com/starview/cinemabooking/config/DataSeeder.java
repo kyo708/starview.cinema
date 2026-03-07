@@ -105,7 +105,7 @@ public class DataSeeder {
                 phim9.setPosterUrl("https://image.tmdb.org/t/p/w500/vpnVM9B6NMmQpWeZvzLvDESb2QY.jpg");
                 phim9.setTheLoai("Hidden");
                 phim9.setDanhGia(0.0f);
-                phim9.setActive(true); 
+                phim9.setActive(false); 
 
                 phimRepository.saveAll(Arrays.asList(phim1, phim2, phim3, phim4, phim5, phim6, phim7, phim8, phim9));
                 System.out.println("✅ Mock movie data successfully seeded!");
