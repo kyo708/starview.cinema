@@ -15,6 +15,9 @@ public class NguoiDung {
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+	
+	@Column(name = "ho_ten", nullable = false)
+	private String hoTen;
 
     @Column(nullable = false, unique = true)
     private String email;

@@ -35,14 +35,14 @@ public class PhimController {
 
 	// Get all movies (including inactive) for staff management
 	@GetMapping("/staff")
-	// @PreAuthorize("hasRole('STAFF')")
+	@PreAuthorize("hasRole('STAFF')")
 	public ResponseEntity<List<PhimDTO>> getAllMovies() {
 		return ResponseEntity.ok(phimService.getAllMovies());
 	}
 
 	// #19: Create new movie
 	@PostMapping("/staff")
-	// @PreAuthorize("hasRole('STAFF')")
+	@PreAuthorize("hasRole('STAFF')")
 	public ResponseEntity<PhimDTO> createMovie(@RequestBody PhimDTO phimDTO) {
 		PhimDTO createdMovie = phimService.createMovie(phimDTO);
 		return ResponseEntity.status(HttpStatus.CREATED).body(createdMovie);
@@ -50,7 +50,7 @@ public class PhimController {
 
 	// #19: Update existing movie
 	@PutMapping("/staff/{id}")
-	// @PreAuthorize("hasRole('STAFF')")
+	@PreAuthorize("hasRole('STAFF')")
 	public ResponseEntity<PhimDTO> updateMovie(@PathVariable Integer id, @RequestBody PhimDTO phimDTO) {
 		PhimDTO updatedMovie = phimService.updateMovie(id, phimDTO);
 		return ResponseEntity.ok(updatedMovie);
@@ -58,7 +58,7 @@ public class PhimController {
 
 	// #20: Disable movie (soft delete)
 	@DeleteMapping("/staff/{id}")
-	// @PreAuthorize("hasRole('STAFF')")
+	@PreAuthorize("hasRole('STAFF')")
 	public ResponseEntity<Void> disableMovie(@PathVariable Integer id) {
 		phimService.disableMovie(id);
 		return ResponseEntity.noContent().build();
@@ -66,7 +66,7 @@ public class PhimController {
 
 	// #21: Hard delete movie (permanently)
 	@DeleteMapping("/staff/hard/{id}")
-	// @PreAuthorize("hasRole('STAFF')")
+	@PreAuthorize("hasRole('STAFF')")
 	public ResponseEntity<Void> deleteMoviePermanently(@PathVariable Integer id) {
 		phimService.deleteMovie(id);
 		return ResponseEntity.noContent().build();
@@ -74,7 +74,7 @@ public class PhimController {
 
 	// #22: Restore movie
 	@PutMapping("/staff/restore/{id}")
-	// @PreAuthorize("hasRole('STAFF')")
+	@PreAuthorize("hasRole('STAFF')")
 	public ResponseEntity<Void> restoreMovie(@PathVariable Integer id) {
 		phimService.restoreMovie(id);
 		return ResponseEntity.ok().build();
