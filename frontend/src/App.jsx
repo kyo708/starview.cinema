@@ -3,6 +3,7 @@ import Catalog from './components/Catalog/Catalog.jsx';
 import Navbar from './components/Navbar/Navbar.jsx';
 import AdminMovieManager from './components/Admin/AdminMovieManager';
 import Login from './components/Login/Login';
+import Register from './components/Register/Register.jsx';
 import ProtectedRoute from './ProtectedRoute.jsx';
 import './App.css';
 
@@ -28,6 +29,9 @@ function App() {
 
           {/* Route đăng nhập */}
           <Route path="/login" element={<Login />} />
+
+          {/* Route đăng ký */}
+          <Route path="/register" element={<Register />} />
         </Routes>
       </div>
     </Router>

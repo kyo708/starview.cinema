@@ -28,7 +28,7 @@ function AdminMovieManager() {
   // Hàm lấy token từ localStorage (giả sử bạn đã lưu khi login)
   // Cần thiết để vượt qua Security của Backend (Role STAFF)
   const getAuthHeaders = () => {
-    const token = localStorage.getItem('token'); 
+    const token = sessionStorage.getItem('token'); 
     return {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}` // Gửi token Bearer chuẩn JWT
@@ -173,7 +173,7 @@ function AdminMovieManager() {
 
   // Hàm đăng xuất
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    sessionStorage.removeItem('token');
     navigate('/login');
   };
 

@@ -5,18 +5,33 @@ import java.util.Arrays;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.starview.cinemabooking.model.Phim;
+import com.starview.cinemabooking.model.NguoiDung;
 import com.starview.cinemabooking.repository.PhimRepository;
+import com.starview.cinemabooking.repository.NguoiDungRepository;
 
 @Configuration
 public class DataSeeder {
 	@Bean
-    CommandLineRunner initDatabase(PhimRepository phimRepository) {
+    CommandLineRunner initDatabase(PhimRepository phimRepository, NguoiDungRepository nguoiDungRepository, PasswordEncoder passwordEncoder) {
         return args -> {
-            // Xóa dữ liệu cũ để cập nhật lại từ đầu (Reset DB mỗi khi chạy lại App)
-            phimRepository.deleteAll();
+            // --- TẠO TÀI KHOẢN STAFF MẪU ---
+            // Chỉ tạo nếu chưa có tài khoản nào trong DB
+            if (nguoiDungRepository.count() == 0) {
+                NguoiDung staffUser = new NguoiDung();
+                staffUser.setHoTen("Staff Account");
+                staffUser.setEmail("staff@starview.com");
+                staffUser.setMatKhau(passwordEncoder.encode("123456"));
+                staffUser.setVaiTro("STAFF"); 
+                nguoiDungRepository.save(staffUser);
+                System.out.println("✅ Staff account created: staff@starview.com / 123456");
+            }
 
+            // --- TẠO DỮ LIỆU PHIM MẪU ---
+            // Chỉ tạo nếu chưa có phim nào trong DB
+            if (phimRepository.count() == 0) {
                 Phim phim1 = new Phim();
                 phim1.setTenPhim("Dune: Hành Tinh Cát - Phần 2");
                 phim1.setGiaGoc(120000.0f);
@@ -109,6 +124,7 @@ public class DataSeeder {
 
                 phimRepository.saveAll(Arrays.asList(phim1, phim2, phim3, phim4, phim5, phim6, phim7, phim8, phim9));
                 System.out.println("✅ Mock movie data successfully seeded!");
+            }
         };
     }
 }
