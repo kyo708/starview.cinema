@@ -72,4 +72,20 @@ public class PhimService {
                                 .map(PhimMapper::toDTO)
                                 .collect(Collectors.toList());
         }
+
+        // #21: Hard delete movie (permanently remove from DB)
+        public void deleteMovie(Integer id) {
+            if (!repository.existsById(id)) {
+                throw new RuntimeException("Phim not found with id: " + id);
+            }
+            repository.deleteById(id);
+        }
+
+        // #22: Restore movie (undo soft delete)
+        public void restoreMovie(Integer id) {
+                Phim phim = repository.findById(id)
+                                .orElseThrow(() -> new RuntimeException("Phim not found with id: " + id));
+                phim.setActive(true);
+                repository.save(phim);
+        }
 }

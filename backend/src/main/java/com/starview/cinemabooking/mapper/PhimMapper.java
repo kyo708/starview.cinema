@@ -17,6 +17,7 @@ public class PhimMapper {
                 phim.getPosterUrl(),
                 phim.getDanhGia(),
                 phim.getTheLoai(),
+                phim.getMoTa(),
                 phim.isActive());
     }
 
@@ -34,6 +35,7 @@ public class PhimMapper {
         phim.setPosterUrl(phimDto.getPosterUrl());
         phim.setDanhGia(phimDto.getDanhGia());
         phim.setTheLoai(phimDto.getTheLoai());
+        phim.setMoTa(phimDto.getMoTa());
 
         // Ensure new movies are active by default
         phim.setActive(true);

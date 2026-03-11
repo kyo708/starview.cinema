@@ -37,6 +37,9 @@ public class Phim {
     @Column(name = "the_loai")
     private String theLoai;
     
+    @Column (name = "mo_ta")
+    private String moTa;
+    
     // Default to true so new movies show up automatically
     @Column(name = "is_active", nullable = false)
     private boolean isActive = true;

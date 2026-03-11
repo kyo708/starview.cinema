@@ -63,4 +63,20 @@ public class PhimController {
 		phimService.disableMovie(id);
 		return ResponseEntity.noContent().build();
 	}
+
+	// #21: Hard delete movie (permanently)
+	@DeleteMapping("/staff/hard/{id}")
+	@PreAuthorize("hasRole('STAFF')")
+	public ResponseEntity<Void> deleteMoviePermanently(@PathVariable Integer id) {
+		phimService.deleteMovie(id);
+		return ResponseEntity.noContent().build();
+	}
+
+	// #22: Restore movie
+	@PutMapping("/staff/restore/{id}")
+	@PreAuthorize("hasRole('STAFF')")
+	public ResponseEntity<Void> restoreMovie(@PathVariable Integer id) {
+		phimService.restoreMovie(id);
+		return ResponseEntity.ok().build();
+	}
 }

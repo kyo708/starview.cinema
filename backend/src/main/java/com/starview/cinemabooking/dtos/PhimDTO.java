@@ -25,6 +25,8 @@ public class PhimDTO {
     private Float danhGia;
     
     private String theLoai;
+    
+    private String moTa;
 
     private Boolean isActive;
 }
