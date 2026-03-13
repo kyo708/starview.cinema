@@ -44,7 +44,7 @@
   background: rgba(0,0,0,0.6);
 }
 
-.hero-content {
+.showtime-hero-content {
   display: flex;
   align-items: flex-end;
   gap: 30px;
@@ -56,6 +56,8 @@
 .mini-poster {
   width: 200px;
   border-radius: 8px;
+  aspect-ratio: 2/3; /* Senior Tip: Fix cứng tỷ lệ poster chuẩn điện ảnh */
+  object-fit: cover;
   box-shadow: 0 10px 30px rgba(0,0,0,0.6); /* Đổ bóng sâu hơn cho cảm giác nổi */
   border: 1px solid rgba(255,255,255,0.1);
 }

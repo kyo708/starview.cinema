@@ -79,7 +79,7 @@ function MovieShowtime() {
 
       {/* 1. Phần Header thông tin phim (Sử dụng dữ liệu thật) */}
       <section className="movie-hero" style={{backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.6), #0f0f0f), url(${movie.posterUrl})`}}>
-        <div className="hero-content">
+        <div className="showtime-hero-content">
           <img src={movie.posterUrl} alt={movie.tenPhim} className="mini-poster" />
           <div className="movie-desc">
             <h1>{movie.tenPhim}</h1>
@@ -90,7 +90,7 @@ function MovieShowtime() {
               <span className="movie-info-text">{movie.theLoai}</span>
             </div>
             <div className="rating-row">
-               <span className="star-icon">⭐</span> <span className="score">{movie.danhGia}</span> <span className="score-label">/ 5</span>
+               <span className="star-icon">⭐</span> <span className="score">{movie.danhGia}</span> <span className="score-label">/ 10</span>
             </div>
           </div>
         </div>

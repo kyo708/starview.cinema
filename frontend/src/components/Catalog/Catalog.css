@@ -1,50 +1,307 @@
-/* Thiết lập nền và phông chữ cho toàn bộ trang */
-.catalog-container {
-  max-width: 100%;
-  margin: 0;
-  padding: 40px 20px;
-  background-color: #fdfbf7;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: #333;
+/* Container chính */
+.gsc-catalog {
+  background-color: #000;
   min-height: 100vh;
+  color: #fff;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  box-sizing: border-box;
+  
 }
 
-.catalog-container h1 {
-  text-align: center;
-  font-size: 2rem;
-  color: #e32222;
-  margin-bottom: 40px;
-  text-transform: uppercase;
-  border-bottom: 2px solid #e32222;
-  display: inline-block;
-  padding-bottom: 10px;
+/* --- HERO BANNER --- */
+.hero-banner {
   position: relative;
-  left: 50%;
-  transform: translateX(-50%);
+  width: 100%;
+  height: 600px; /* Chiếm 80% chiều cao màn hình, gọn hơn */
+  background-size: cover;
+  background-position: 50% 25%; /* Căn giữa ngang, neo ở vị trí 25% từ trên xuống (khu vực mắt/mặt) */
+  transition: background-image 0.8s ease-in-out; /* Hiệu ứng chuyển ảnh mượt */
 }
 
-/* Chia lưới 4 cột cho danh sách phim */
-.movie-grid {
+.hero-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  /* Phủ đen từ dưới lên và từ trái qua phải để hiện rõ thông tin */
+  background: linear-gradient(to top, #000000 25%, rgba(0,0,0,0) 70%); /* Gradient mạnh hơn từ dưới lên */
+}
+
+.catalog-hero-content {
+  position: absolute;
+  top: 42%; /* Căn giữa theo chiều dọc */
+  left: 5%;
+  transform: translateY(-50%); 
+  z-index: 20;
+  display: flex;
+flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  max-width: 60%; 
+}
+
+.hero-meta {
+  color: #ccc;
+  font-size: 0.85rem; /* Nhỏ hơn */
+  margin-bottom: 10px;
+}
+
+.hero-title {
+  font-size: 2.5rem; /* Nhỏ hơn */
+  font-weight: 900;
+  margin: 0 0 10px 0;
+  line-height: 1.1;
+}
+
+.hero-desc {
+  color: #aaa;
+  font-size: 0.9rem; /* Nhỏ hơn */
+  line-height: 1.5;
+  margin-bottom: 20px;
+  max-width: 60%; /* Giới hạn chiều rộng để không quá dài */
+}
+
+.hero-actions {
+  display: flex;
+  gap: 15px;
+}
+
+.btn-view-more, .btn-book-now {
+  padding: 10px 20px; /* Nút nhỏ hơn */
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.btn-view-more { /* Giữ lại style riêng */
+  background: rgba(255,255,255,0.2);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.3);
+  cursor: pointer;
+  backdrop-filter: blur(5px);
+  transition: 0.3s;
+}
+
+.btn-view-more:hover {
+  background: rgba(255,255,255,0.3);
+}
+
+.btn-book-now { 
+  background: #ffb400; /* Vàng GSC */
+  color: #000;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.btn-book-now:hover {
+  transform: scale(1.05);
+}
+
+/* --- Wrapper cho nội dung dưới banner --- */
+.bottom-content-wrapper {
+  position: absolute;
+  bottom: 0;
+  left: 58%;
+  transform: translate(-50%, 50%); /* Dịch ngang 50% và dịch dọc 50% để căn giữa vào border-bottom */
+  width: 80%;
+  padding: 30px 0 30px 0;
+  z-index: 10;
+  box-sizing: border-box;
+  margin-top: 30px;
+
+}
+
+
+
+/* Header chứa Tiêu đề và Nút điều hướng */
+.carousel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-right: 0; /* Xóa padding ảo vì khung đã vừa khít màn hình */
+}
+
+.carousel-title {
+  font-size: 1.2rem;
+  margin-bottom: 0; /* Bỏ margin bottom cũ */
+  text-align: left; /* Căn lề trái */
+  z-index: 0;
+}
+
+/* Nút điều hướng trái/phải */
+.carousel-nav-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+/* Nút bấm mới */
+.nav-btn {
+  background: rgba(30, 30, 30, 0.6); 
+  backdrop-filter: blur(8px); 
+  border: 1px solid rgba(255, 255, 255, 0.1); 
+  color: rgba(255, 255, 255, 0.8);
+  width: 42px; 
+  height: 42px;
+  border-radius: 12px; 
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  padding: 0; 
+}
+
+/* Kích thước của icon SVG bên trong */
+.nav-btn svg {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.2s ease;
+}
+
+/* Hiệu ứng khi di chuột vào (Hover) */
+.nav-btn:hover {
+  background: rgba(60, 60, 60, 0.8); /* Sáng lên một chút */
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+}
+
+/* Thêm một "Trick" nhỏ: Khi hover, icon mũi tên xê dịch nhẹ 2px tạo cảm giác tương tác thật */
+.carousel-nav-buttons .nav-btn:first-child:hover svg {
+  transform: translateX(-2px);
+}
+.carousel-nav-buttons .nav-btn:last-child:hover svg {
+  transform: translateX(2px);
+}
+
+.carousel-track {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+padding: 15px 0 20px 0;
+  scrollbar-width: none;
+  scroll-behavior: smooth; /* Cuộn mượt mà khi nhấn nút */
+}
+
+/* Thẻ phim nhỏ */
+.mini-card {
+  position: relative;
+  min-width: 140px;
+  width: 140px;
+  height: 200px;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  opacity: 0.6; /* Làm mờ các phim không được chọn */
+  z-index: 1;
+}
+
+/* Hiệu ứng cho phim đang được chọn */
+.mini-card.active {
+  border: 2px solid #ffb400;
+  opacity: 1;
+  transform: translateY(-10px); /* Nẩy lên một chút */
+  box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+  z-index: 10;
+}
+
+.mini-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mini-rank {
+  position: absolute;
+  bottom: -10px;
+  left: -5px;
+  font-size: 60px;
+  font-weight: 900;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+  line-height: 1;
+  z-index: 2;
+}
+
+.mini-title {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 25px 10px 10px 20px;
+  background: linear-gradient(to top, #000, transparent);
+  font-size: 0.8rem;
+  font-weight: bold;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  z-index: 1;
+}
+
+/* --- PHẦN LƯỚI BÊN DƯỚI --- */
+.section-showtimes {
+  margin-top: 10rem;
+  padding: 0 5% 50px 5%;
+}
+
+.catalog-tabs {
+  margin: 40px 0 20px 0;
+  border-bottom: 1px solid #333;
+}
+
+.catalog-tab {
+  background: none;
+  border: none;
+  color: #666;
+  padding: 10px 20px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.catalog-tab.active {
+  color: #ffb400;
+  border-bottom: 2px solid #ffb400;
+}
+
+.gsc-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, 240px); /* Card cố định 240px, không stretch */
-  justify-content: center; /* Căn giữa các card trong trang */
-  max-width: 1350px; /* Giới hạn chiều rộng để tối đa ~5 card/hàng */
-  margin: 20px auto; /* Căn giữa container lưới */
-  gap: 30px; /* Khoảng cách giữa các phim */
+  
+  grid-template-columns: repeat(5, minmax(0, 1fr)); /* Fix: minmax(0, 1fr) ép các cột bằng nhau tuyệt đối, bất chấp kích thước nội dung */
+  gap: 30px;
 }
 
-/* Hiệu ứng Loading Spinner xoay tròn */
-.loading-spinner {
-  border: 5px solid #f3f3f3; /* Màu xám nhạt */
-  border-top: 5px solid #e32222; /* Màu đỏ chủ đạo */
-  border-radius: 50%;
-  width: 50px;
-  height: 50px;
-  animation: spin 1s linear infinite;
-  margin: 50px auto; /* Căn giữa */
+/* Responsive: Trên màn hình nhỏ hơn 1200px, quay lại chế độ tự động để thẻ không bị quá bé */
+@media (max-width: 1200px) {
+  .gsc-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+/* --- PAGINATION DOTS (Bên phải) --- */
+.hero-pagination {
+  position: absolute;
+  right: 30px;
+  top: 70%;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 12px;
+  z-index: 20;
+}
+
+.pagination-dot {
+  width: 6px;
+  height: 6px;
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.pagination-dot.active {
+ width: 30px; /* Kéo dài ra khi active */
+  background-color: #ffb400;
+  box-shadow: 0 0 10px rgba(255, 180, 0, 0.5);
 }
