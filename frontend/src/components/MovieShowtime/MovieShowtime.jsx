@@ -16,12 +16,13 @@ const getNext7Days = () => {
     const dayOfWeek = dayNames[date.getDay()];
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear(); // Lấy năm theo giờ Local
     
-    // Dùng chữ "Hôm nay" cho ngày đầu tiên
+
     const displayLabel = i === 0 ? 'Hôm nay' : `${dayOfWeek}, ${day}/${month}`;
     
     days.push({
-        key: date.toISOString().split('T')[0], // Key định danh, ví dụ: "2024-05-26"
+        key: `${year}-${month}-${day}`, // Ghép chuỗi YYYY-MM-DD chuẩn theo giờ địa phương
         display: displayLabel
     });
   }
@@ -38,18 +39,8 @@ function MovieShowtime() {
   const availableDays = useMemo(() => getNext7Days(), []);
   const [selectedDate, setSelectedDate] = useState(availableDays[0].key);
 
-  // Dữ liệu giả định mới cho các rạp và suất chiếu
-  const mockCinemas = [
-    {
-      name: 'StarView GigaMall Thủ Đức',
-      showtimes: [
-        { format: '2D Phụ Đề', times: ['09:00', '11:30', '14:45', '19:00', '21:30'] },
-        { format: 'IMAX 2D', times: ['10:00', '13:15', '16:30', '20:15'] }
-      ]
-    },
-    { name: 'StarView Landmark 81', showtimes: [{ format: '2D Phụ Đề', times: ['09:30', '12:00', '18:00', '21:00'] }] },
-    { name: 'StarView Crescent Mall', showtimes: [{ format: '2D Phụ Đề', times: ['10:30', '15:00'] }, { format: '4DX', times: ['11:00', '19:30'] }] }
-  ];
+  // State lưu danh sách rạp và suất chiếu lấy từ API
+  const [cinemasData, setCinemasData] = useState([]);
 
   useEffect(() => {
     // Cuộn lên đầu trang mỗi khi vào chi tiết phim
@@ -64,6 +55,49 @@ function MovieShowtime() {
       .then(data => setMovie(data))
       .catch(err => console.error("Lỗi tải phim:", err));
   }, [id]);
+
+  // Gọi API lấy lịch chiếu khi đổi ngày hoặc phim
+  useEffect(() => {
+    if (!id || !selectedDate) return;
+
+    fetch(`http://localhost:8080/api/v1/suat-chieu/phim/${id}?date=${selectedDate}`)
+      .then(res => res.json())
+      .then(data => {
+
+        // Backend trả về object 
+        const showtimesList = data.showtimes || [];
+
+        // Gom nhóm mảng phẳng từ Backend thành cấu trúc hiển thị UI
+        const groupedData = showtimesList.reduce((acc, curr) => {
+
+          const cinemaName = "StarView Cinemas";
+          // Trích xuất định dạng chiếu từ tên phòng (VD: "P01 - IMAX" -> "IMAX")
+          const format = curr.tenPhong && curr.tenPhong.includes('-') ? curr.tenPhong.split('-')[1].trim() : "2D Phụ Đề"; 
+          // Lấy chuỗi giờ (vd: "2024-05-26T19:30:00" -> "19:30")
+          const time = curr.thoiGianChieu ? curr.thoiGianChieu.substring(11, 16) : "00:00"; 
+
+          let cinema = acc.find(c => c.name === cinemaName);
+          if (!cinema) {
+            cinema = { name: cinemaName, showtimes: [] };
+            acc.push(cinema);
+          }
+
+          let showtimeGroup = cinema.showtimes.find(s => s.format === format);
+          if (!showtimeGroup) {
+            showtimeGroup = { format: format, times: [] };
+            cinema.showtimes.push(showtimeGroup);
+          }
+
+          showtimeGroup.times.push(time);
+          return acc;
+        }, []);
+
+        setCinemasData(groupedData);
+      })
+      .catch(err => {
+        console.error("Lỗi tải lịch chiếu:", err);
+      });
+  }, [id, selectedDate]);
 
   if (!movie) return <div className="showtime-container" style={{padding: '100px', textAlign: 'center'}}>Đang tải thông tin phim...</div>;
 
@@ -129,7 +163,9 @@ function MovieShowtime() {
 
           {/* Danh sách rạp và giờ chiếu */}
           <div className="cinema-list">
-            {mockCinemas.map((cinema) => (
+            {cinemasData.length === 0 ? (
+              <p style={{textAlign: 'center', color: '#888', marginTop: '20px', fontSize: '1.1rem'}}>Chưa có suất chiếu nào trong ngày này.</p>
+            ) : cinemasData.map((cinema) => (
               <div key={cinema.name} className="cinema-card">
                 <h5 className="cinema-name">{cinema.name}</h5>
                 <div className="showtime-formats">
@@ -138,7 +174,11 @@ function MovieShowtime() {
                       <span className="format-label">{show.format}</span>
                       <div className="time-slots">
                         {show.times.map((time, index) => (
-                          <button key={index} className="time-btn available" onClick={() => alert(`Bạn chọn suất: ${time}`)}>{time}</button>
+                          <button 
+                            key={index} 
+                            className="time-btn available" 
+                            onClick={() => navigate(`/phim/${id}/seatselection?cinema=${encodeURIComponent(cinema.name)}&time=${time}&date=${selectedDate}`)}
+                          >{time}</button>
                         ))}
                       </div>
                     </div>
