@@ -30,7 +30,7 @@ import lombok.RequiredArgsConstructor;
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
-	private final JwtAuthenticationFilter jwtAuthFilter;
+    private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsServiceImpl userDetailsService;
 
     @Bean
@@ -40,18 +40,22 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource())) // 1. Kích hoạt CORS toàn cục
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                		// Whitelist the Swagger UI and OpenAPI docs so anyone can view them (For Testing, temporary)
+                        // Whitelist the Swagger UI and OpenAPI docs so anyone can view them (For
+                        // Testing, temporary)
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                		// Public endpoints
+                        // Public endpoints
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/suat-chieu/phim/**").permitAll()
                         // Staff endpoints require STAFF role
                         // Đưa quy tắc cụ thể lên trước: API staff bắt buộc phải có quyền STAFF
                         .requestMatchers("/admin/**").hasRole("STAFF")
-                        // Đưa quy tắc tổng quát xuống dưới: Các API phim khác (public) thì cho phép tất cả
+                        // Đưa quy tắc tổng quát xuống dưới: Các API phim khác (public) thì cho phép tất
+                        // cả
                         .requestMatchers("/phim/**").permitAll()
                         // Other configuration as needed
                         .anyRequest().authenticated())
-        		.addFilterBefore(jwtAuthFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthFilter,
+                        org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -59,9 +63,14 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://127.0.0.1:5173")); // Chỉ cho phép React dev server
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS")); // Cho phép các phương thức CRUD
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type")); // Cho phép gửi header Authorization và Content-Type
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://127.0.0.1:5173")); // Chỉ cho
+                                                                                                          // phép React
+                                                                                                          // dev server
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS")); // Cho phép các
+                                                                                                   // phương thức CRUD
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type")); // Cho phép gửi header
+                                                                                         // Authorization và
+                                                                                         // Content-Type
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration); // Áp dụng cho tất cả các đường dẫn
         return source;
@@ -71,7 +80,7 @@ public class SecurityConfig {
     AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userDetailsService);
         // This tells Spring to use BCrypt to check the hashed passwords
-        authProvider.setPasswordEncoder(passwordEncoder()); 
+        authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }
 
@@ -83,6 +92,6 @@ public class SecurityConfig {
     @Bean
     PasswordEncoder passwordEncoder() {
         // Industry standard for secure password hashing (US 1.1 AC #11)
-        return new BCryptPasswordEncoder(); 
+        return new BCryptPasswordEncoder();
     }
 }
