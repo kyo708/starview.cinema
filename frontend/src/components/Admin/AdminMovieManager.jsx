@@ -222,9 +222,10 @@ function AdminMovieManager() {
         </div>
 
         <div className="form-group">
-          <label>Đánh Giá (0-5)</label>
+          <label>Đánh Giá (0-10)</label>
           <input 
-            type="number" step="0.1" max="5" name="danhGia" 
+            type="number" step="0.1" max="10" min="0" 
+            name="danhGia" 
             value={formData.danhGia} onChange={handleInputChange} 
           />
         </div>

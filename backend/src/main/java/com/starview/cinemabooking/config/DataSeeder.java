@@ -8,14 +8,20 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.starview.cinemabooking.model.Phim;
+import com.starview.cinemabooking.model.PhongChieu;
 import com.starview.cinemabooking.model.NguoiDung;
 import com.starview.cinemabooking.repository.PhimRepository;
+import com.starview.cinemabooking.repository.PhongChieuRepository;
 import com.starview.cinemabooking.repository.NguoiDungRepository;
 
 @Configuration
 public class DataSeeder {
-	@Bean
-    CommandLineRunner initDatabase(PhimRepository phimRepository, NguoiDungRepository nguoiDungRepository, PasswordEncoder passwordEncoder) {
+    @Bean
+    CommandLineRunner initDatabase(
+            PhimRepository phimRepository,
+            NguoiDungRepository nguoiDungRepository,
+            PhongChieuRepository phongChieuRepository,
+            PasswordEncoder passwordEncoder) {
         return args -> {
             // --- TẠO TÀI KHOẢN STAFF MẪU ---
             // Chỉ tạo nếu chưa có tài khoản nào trong DB
@@ -24,7 +30,7 @@ public class DataSeeder {
                 staffUser.setHoTen("Staff Account");
                 staffUser.setEmail("staff@starview.com");
                 staffUser.setMatKhau(passwordEncoder.encode("123456"));
-                staffUser.setVaiTro("STAFF"); 
+                staffUser.setVaiTro("STAFF");
                 nguoiDungRepository.save(staffUser);
                 System.out.println("✅ Staff account created: staff@starview.com / 123456");
             }
@@ -74,8 +80,8 @@ public class DataSeeder {
                 phim4.setTheLoai("Hành động, Hình sự");
                 phim4.setDanhGia(6.9f);
                 phim4.setMoTa("Mô tả Placeholder");
-                phim4.setActive(true); 
-                
+                phim4.setActive(true);
+
                 Phim phim5 = new Phim();
                 phim5.setTenPhim("Oppenheimer");
                 phim5.setGiaGoc(120000.0f);
@@ -85,8 +91,8 @@ public class DataSeeder {
                 phim5.setTheLoai("Lịch sử, Chính kịch");
                 phim5.setDanhGia(8.1f);
                 phim5.setMoTa("Mô tả Placeholder");
-                phim5.setActive(true); 
-                
+                phim5.setActive(true);
+
                 Phim phim6 = new Phim();
                 phim6.setTenPhim("Exhuma: Quật Mộ Trùng Ma");
                 phim6.setGiaGoc(11000.0f);
@@ -96,8 +102,8 @@ public class DataSeeder {
                 phim6.setTheLoai("Hành động, Hình sự");
                 phim6.setDanhGia(7.6f);
                 phim6.setMoTa("Mô tả Placeholder");
-                phim6.setActive(true); 
-                
+                phim6.setActive(true);
+
                 Phim phim7 = new Phim();
                 phim7.setTenPhim("Civil War: Ngày Tàn Của Đế Quốc");
                 phim7.setGiaGoc(110000.0f);
@@ -107,8 +113,8 @@ public class DataSeeder {
                 phim7.setTheLoai("Hành động, Chiến tranh");
                 phim7.setDanhGia(7.4f);
                 phim7.setMoTa("Mô tả Placeholder");
-                phim7.setActive(true); 
-                
+                phim7.setActive(true);
+
                 Phim phim8 = new Phim();
                 phim8.setTenPhim("Inside Out 2: Những Mảnh Ghép Cảm Xúc");
                 phim8.setGiaGoc(100000.0f);
@@ -118,8 +124,8 @@ public class DataSeeder {
                 phim8.setTheLoai("Hoạt hình, Gia đình");
                 phim8.setDanhGia(8.0f);
                 phim8.setMoTa("Mô tả Placeholder");
-                phim8.setActive(true); 
-                
+                phim8.setActive(true);
+
                 Phim phim9 = new Phim();
                 phim9.setTenPhim("Hidden Movie");
                 phim9.setGiaGoc(50000.0f);
@@ -129,10 +135,28 @@ public class DataSeeder {
                 phim9.setTheLoai("Hidden");
                 phim9.setDanhGia(0.0f);
                 phim9.setMoTa("Mô tả Placeholder");
-                phim9.setActive(true); 
+                phim9.setActive(true);
 
                 phimRepository.saveAll(Arrays.asList(phim1, phim2, phim3, phim4, phim5, phim6, phim7, phim8, phim9));
                 System.out.println("✅ Mock movie data successfully seeded!");
+            }
+
+            // --- TẠO PHÒNG CHIẾU MẪU ---
+            if (phongChieuRepository.count() == 0) {
+                PhongChieu room1 = new PhongChieu();
+                room1.setTenPhong("Phòng 1");
+                room1.setTongSoGhe(100);
+
+                PhongChieu room2 = new PhongChieu();
+                room2.setTenPhong("Phòng 2");
+                room2.setTongSoGhe(80);
+
+                PhongChieu room3 = new PhongChieu();
+                room3.setTenPhong("Phòng VIP");
+                room3.setTongSoGhe(50);
+
+                phongChieuRepository.saveAll(Arrays.asList(room1, room2, room3));
+                System.out.println("✅ Mock room data successfully seeded!");
             }
         };
     }

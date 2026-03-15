@@ -13,24 +13,24 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class GheSuatChieu {
-	@Id
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-	
-	// Relationship: SUAT_CHIEU ||--o{ GHE_SUAT_CHIEU
+
+    // Relationship: SUAT_CHIEU ||--o{ GHE_SUAT_CHIEU
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "suat_chieu_id", nullable = false)
     private SuatChieu suatChieu;
-    
-    // Relationship: DON_HANG ||--o{ GHE_SUAT_CHIEU 
+
+    // Relationship: DON_HANG ||--o{ GHE_SUAT_CHIEU
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "don_Hang_id")
     private DonHang donHang;
-    
+
     // "Ví dụ: Thường, VIP, Đôi"
     @Column(name = "loai_ghe", length = 50, nullable = false)
     private String loaiGhe;
-    
+
     // "Trống, Đang chờ, Đã bán"
     @Column(name = "trang_thai", length = 50, nullable = false)
     private String trangThai;

@@ -1,97 +1,94 @@
-/* Định dạng thẻ chứa từng bộ phim */
-.movie-card {
-  display: flex;
-  flex-direction: column;
-  background: #fff;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease; /* Hiệu ứng mượt mà */
-  cursor: pointer;
-  position: relative;
-}
-
-/* Hiệu ứng khi di chuột vào thẻ phim */
-.movie-card:hover {
-  transform: scale(1.03); /* Phóng to nhẹ */
-  box-shadow: 0 10px 20px rgba(0,0,0,0.2); /* Đổ bóng sâu hơn */
-}
-
-/* Thêm container để chứa poster và nút play */
-.poster-container {
-  position: relative;
-}
-
-/* Căn chỉnh ảnh poster */
-.movie-poster {
+.gsc-movie-card {
   width: 100%;
-  aspect-ratio: 2 / 3;
-  object-fit: cover;
-  display: block; /* Loại bỏ khoảng trắng dưới ảnh */
+  height: 100%; /* Chiếm toàn bộ chiều cao của ô lưới (Grid Cell) */
+  color: white;
+  transition: transform 0.3s ease;
+  display: flex;
+  flex-direction: column; /* Xếp dọc các phần tử để kiểm soát khoảng cách */
 }
 
-/* Lớp phủ màu đen mờ hiện lên khi hover */
-.play-overlay {
+.poster-wrapper {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  aspect-ratio: 2/3;
+}
+
+.main-poster {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Hiệu ứng Hover Play */
+.hover-overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.6);
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: 0.3s;
+  cursor: pointer;
 }
 
-.movie-card:hover .play-overlay {
+.poster-wrapper:hover .hover-overlay {
   opacity: 1;
 }
 
-.play-icon {
-  width: 60px;
-  height: 60px;
-  fill: rgba(255, 255, 255, 0.9);
-  transition: transform 0.2s ease;
+.play-circle {
+  width: 50px;
+  height: 50px;
+  border: 2px solid white;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-/* Định dạng phần chữ bên dưới ảnh */
-.movie-info {
-  padding: 15px;
-  flex-grow: 1;
+/* Rank Number cho phần Trending */
+.rank-number {
+  position: absolute;
+  bottom: -10px;
+  left: -10px;
+  font-size: 80px;
+  font-weight: 900;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.2);
+  line-height: 1;
+  z-index: 1;
+}
+
+.movie-details {
+  padding: 12px 0;
+  flex-grow: 1; /* Chiếm hết khoảng trống còn lại */
   display: flex;
   flex-direction: column;
+  justify-content: space-between; /* Đẩy nút Mua Vé xuống đáy thẻ nếu tên phim ngắn */
 }
 
-.movie-info h3 {
-  font-size: 1.1rem;
-  text-transform: uppercase;
-  margin: 0 0 10px 0;
-  min-height: 40px; /* Đảm bảo tiêu đề dài không làm lệch khung */
-}
-
-.movie-info p {
-  margin: 5px 0;
-  font-size: 0.9rem;
-}
-
-/* Định dạng nút Mua Vé */
-.book-btn {
-  background: linear-gradient(45deg, #e32222, #c11c1c); /* Màu gradient sang trọng */
-  color: white;
-  border: none;
-  padding: 12px;
-  border-radius: 4px;
-  cursor: pointer;
+.movie-title {
+  font-size: 0.95rem;
   font-weight: bold;
-  margin-top: auto; /* Đẩy nút xuống dưới cùng */
-  width: 100%;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  transition: background 0.3s;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.book-btn:hover {
-  background: linear-gradient(45deg, #c11c1c, #9a1616);
+.movie-meta {
+  font-size: 0.75rem;
+  color: #999;
+  margin-bottom: 10px;
+}
+
+.gsc-buy-btn {
+  background: #ffb400; /* Màu vàng đặc trưng GSC */
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  width: 100%;
 }
