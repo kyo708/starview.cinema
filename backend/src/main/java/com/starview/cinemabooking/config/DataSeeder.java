@@ -177,17 +177,20 @@ public class DataSeeder {
                     sc1.setPhim(phims.get(0)); // Phim: Dune 2
                     sc1.setPhongChieu(phongs.get(0)); // Phòng 1
                     sc1.setThoiGianChieu(now.withHour(18).withMinute(30).withSecond(0)); // Hôm nay 18:30
+                    sc1.setHeSoGia(1.0f);
 
                     SuatChieu sc2 = new SuatChieu();
                     sc2.setPhim(phims.get(0)); // Phim: Dune 2
                     sc2.setPhongChieu(phongs.get(1)); // Phòng 2
                     sc2.setThoiGianChieu(now.plusDays(1).withHour(20).withMinute(0).withSecond(0)); // Ngày mai 20:00
+                    sc2.setHeSoGia(1.0f);
 
                     SuatChieu sc3 = new SuatChieu();
                     sc3.setPhim(phims.get(1)); // Phim: Kung Fu Panda 4
                     sc3.setPhongChieu(phongs.get(2)); // Phòng VIP
                     sc3.setThoiGianChieu(now.withHour(19).withMinute(15).withSecond(0)); // Hôm nay 19:15
-
+                    sc3.setHeSoGia(1.0f);
+                    
                     suatChieuRepository.saveAll(Arrays.asList(sc1, sc2, sc3));
                     System.out.println("✅ Mock showtime data successfully seeded!");
                 }
