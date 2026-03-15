@@ -48,6 +48,7 @@ public class SecurityConfig {
                         .requestMatchers("/suat-chieu/phim/**").permitAll()
                         // Staff endpoints require STAFF role
                         // Đưa quy tắc cụ thể lên trước: API staff bắt buộc phải có quyền STAFF
+                        .requestMatchers("/phim/staff/**", "/phong-chieu/staff/**", "/suat-chieu/staff/**").hasRole("STAFF")
                         .requestMatchers("/admin/**").hasRole("STAFF")
                         // Đưa quy tắc tổng quát xuống dưới: Các API phim khác (public) thì cho phép tất
                         // cả
