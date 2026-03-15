@@ -28,7 +28,7 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class SuatChieuService {
-    private static final String SEAT_STATUS_TRONG = "TRONG";
+    private static final String SEAT_STATUS_TRONG = "Trống";
 
     private final SuatChieuRepository suatChieuRepository;
     private final GheSuatChieuRepository gheSuatChieuRepository;
@@ -68,7 +68,7 @@ public class SuatChieuService {
             ghe.setLoaiGhe(determineSeatType(i, totalSeats));
             ghe.setTrangThai(SEAT_STATUS_TRONG);
             ghe.setThoiGianHetHanGiuCho(start);
-            ghe.setIsLocked(0);
+            ghe.setPhienBan(1);
             gheSuatChieus.add(ghe);
         }
 

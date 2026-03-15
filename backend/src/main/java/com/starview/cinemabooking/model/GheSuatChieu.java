@@ -34,11 +34,12 @@ public class GheSuatChieu {
     // "Trống, Đang chờ, Đã bán"
     @Column(name = "trang_thai", length = 50, nullable = false)
     private String trangThai;
-
-    @Column(name = "thoi_gian_het_han_giu_cho", nullable = false)
+    
+    @Column(name = "thoi_gian_het_han_giu_cho")
     private LocalDateTime thoiGianHetHanGiuCho;
-
-    // "Dùng cho Khóa lạc quan chống trùng ghế"
-    @Column(name = "is_locked")
-    private int isLocked;
+    
+    //"Dùng cho Khóa lạc quan chống trùng ghế"
+    @Version
+    @Column(name = "phien_ban")
+    private int phienBan;
 }
