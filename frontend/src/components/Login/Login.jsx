@@ -85,7 +85,7 @@ function Login() {
         <button type="submit" className="btn-login">ĐĂNG NHẬP</button>
 
         <p style={{marginTop: '20px', fontSize: '0.9rem'}}>
-          Chưa có tài khoản? <Link to="/register">Đăng ký ngay</Link>
+          <Link to="/register">Đăng ký tài khoản cho nhân viên mới</Link>
         </p>
       </form>
     </div>
