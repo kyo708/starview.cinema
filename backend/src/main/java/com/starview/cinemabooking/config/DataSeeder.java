@@ -210,7 +210,7 @@ public class DataSeeder {
                             ghe.setLoaiGhe(determineSeatType(i, totalSeats));
                             ghe.setTrangThai("TRONG");
                             ghe.setThoiGianHetHanGiuCho(showtime.getThoiGianChieu());
-                            ghe.setIsLocked(0); // Đổi sang ghe.setPhienBan(1) khi merge PR #54
+                            ghe.setPhienBan(1); // Đổi sang ghe.setPhienBan(1) khi merge PR #54
                             allSeats.add(ghe);
                         }
                     }
