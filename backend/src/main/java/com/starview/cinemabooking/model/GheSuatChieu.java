@@ -24,7 +24,7 @@ public class GheSuatChieu {
 
     // Relationship: DON_HANG ||--o{ GHE_SUAT_CHIEU
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "don_Hang_id")
+    @JoinColumn(name = "don_Hang_id", nullable = true)
     private DonHang donHang;
 
     // "Ví dụ: Thường, VIP, Đôi"

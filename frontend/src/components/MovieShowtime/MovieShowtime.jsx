@@ -88,7 +88,11 @@ function MovieShowtime() {
             cinema.showtimes.push(showtimeGroup);
           }
 
-          showtimeGroup.times.push(time);
+          // SỬA Ở ĐÂY: Lưu cả chuỗi giờ và ID của suất chiếu
+          showtimeGroup.times.push({
+            time: time,
+            id: curr.id || curr.suatChieuId 
+          });
           return acc;
         }, []);
 
@@ -173,12 +177,13 @@ function MovieShowtime() {
                     <div key={show.format} className="format-row">
                       <span className="format-label">{show.format}</span>
                       <div className="time-slots">
-                        {show.times.map((time, index) => (
+                        {/* SỬA Ở ĐÂY: Sử dụng object `t` (bao gồm t.time và t.id) để truyền vào URL */}
+                        {show.times.map((t, index) => (
                           <button 
                             key={index} 
                             className="time-btn available" 
-                            onClick={() => navigate(`/phim/${id}/seatselection?cinema=${encodeURIComponent(cinema.name)}&time=${time}&date=${selectedDate}`)}
-                          >{time}</button>
+                            onClick={() => navigate(`/phim/${id}/seatselection?cinema=${encodeURIComponent(cinema.name)}&time=${t.time}&date=${selectedDate}&suatChieuId=${t.id}`)}
+                          >{t.time}</button>
                         ))}
                       </div>
                     </div>

@@ -18,11 +18,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.starview.cinemabooking.dtos.CreateSuatChieuRequest;
 import com.starview.cinemabooking.dtos.MovieShowtimesByDateResponse;
+import com.starview.cinemabooking.dtos.GheSuatChieuDTO;
 import com.starview.cinemabooking.dtos.SuatChieuCreateResponse;
 import com.starview.cinemabooking.service.SuatChieuService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import java.util.List;
 
 @RestController
 @RequestMapping("/suat-chieu")
@@ -44,5 +46,15 @@ public class SuatChieuController {
             @PathVariable Integer phimId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         return ResponseEntity.ok(suatChieuService.getMovieShowtimesByDate(phimId, date));
+    }
+
+    /**
+     * API để lấy danh sách tất cả ghế (kèm trạng thái) của một suất chiếu cụ thể.
+     * @param suatChieuId ID của Suất Chiếu
+     * @return Danh sách các ghế
+     */
+    @GetMapping("/{suatChieuId}/ghe")
+    public ResponseEntity<List<GheSuatChieuDTO>> getGheBySuatChieu(@PathVariable Integer suatChieuId) {
+        return ResponseEntity.ok(suatChieuService.getGheBySuatChieu(suatChieuId));
     }
 }

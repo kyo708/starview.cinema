@@ -32,6 +32,14 @@ public class DataSeeder {
             GheSuatChieuRepository gheSuatChieuRepository,
             PasswordEncoder passwordEncoder) {
         return args -> {
+            // --- RESET DỮ LIỆU TOÀN BỘ (Theo yêu cầu) ---
+            // Lưu ý: Phải xóa theo thứ tự từ bảng con đến bảng cha để tránh lỗi khóa ngoại
+            System.out.println("🔄 Đang thực hiện reset toàn bộ dữ liệu...");
+            gheSuatChieuRepository.deleteAll();
+            suatChieuRepository.deleteAll();
+            phongChieuRepository.deleteAll();
+            phimRepository.deleteAll();
+
             // --- TẠO TÀI KHOẢN STAFF MẪU ---
             // Chỉ tạo nếu chưa có tài khoản nào trong DB
             if (nguoiDungRepository.count() == 0) {
@@ -50,7 +58,7 @@ public class DataSeeder {
                 Phim phim1 = new Phim();
                 phim1.setTenPhim("Dune: Hành Tinh Cát - Phần 2");
                 phim1.setGiaGoc(120000.0f);
-                phim1.setThoiLuongPhut(16);
+                phim1.setThoiLuongPhut(166);
                 phim1.setTrailerUrl("https://www.youtube.com/watch?v=Way9Dexny3w");
                 phim1.setPosterUrl("https://image.tmdb.org/t/p/w500/8QdnKQyZDlN6rBSrfU1V5PctfUu.jpg");
                 phim1.setTheLoai("Viễn tưởng, Hành động");
@@ -180,41 +188,37 @@ public class DataSeeder {
                     SuatChieu sc1 = new SuatChieu();
                     sc1.setPhim(phims.get(0)); // Phim: Dune 2
                     sc1.setPhongChieu(phongs.get(0)); // Phòng 1
-                    sc1.setThoiGianChieu(now.withHour(18).withMinute(30).withSecond(0)); // Hôm nay 18:30
+                    sc1.setThoiGianChieu(now.withHour(18).withMinute(30).withSecond(0)); 
                     sc1.setHeSoGia(1.0f);
 
                     SuatChieu sc2 = new SuatChieu();
                     sc2.setPhim(phims.get(0)); // Phim: Dune 2
                     sc2.setPhongChieu(phongs.get(1)); // Phòng 2
-                    sc2.setThoiGianChieu(now.plusDays(1).withHour(20).withMinute(0).withSecond(0)); // Ngày mai 20:00
+                    sc2.setThoiGianChieu(now.plusDays(1).withHour(20).withMinute(0).withSecond(0)); 
                     sc2.setHeSoGia(1.0f);
 
                     SuatChieu sc3 = new SuatChieu();
                     sc3.setPhim(phims.get(1)); // Phim: Kung Fu Panda 4
                     sc3.setPhongChieu(phongs.get(2)); // Phòng VIP
-                    sc3.setThoiGianChieu(now.withHour(19).withMinute(15).withSecond(0)); // Hôm nay 19:15
+                    sc3.setThoiGianChieu(now.withHour(19).withMinute(15).withSecond(0)); 
                     sc3.setHeSoGia(1.0f);
                     
                     List<SuatChieu> savedShowtimes = suatChieuRepository.saveAll(Arrays.asList(sc1, sc2, sc3));
                     System.out.println("✅ Mock showtime data successfully seeded!");
-                    
+
                     List<GheSuatChieu> allSeats = new ArrayList<>();
-                    
                     for (SuatChieu showtime : savedShowtimes) {
                         int totalSeats = showtime.getPhongChieu().getTongSoGhe();
-                        
                         for (int i = 1; i <= totalSeats; i++) {
                             GheSuatChieu ghe = new GheSuatChieu();
                             ghe.setSuatChieu(showtime);
-                            ghe.setDonHang(null);
-                            ghe.setLoaiGhe(determineSeatType(i, totalSeats));
+                            ghe.setLoaiGhe(determineSeatType(i));
                             ghe.setTrangThai("TRONG");
                             ghe.setThoiGianHetHanGiuCho(showtime.getThoiGianChieu());
                             ghe.setPhienBan(1); // Đổi sang ghe.setPhienBan(1) khi merge PR #54
                             allSeats.add(ghe);
                         }
                     }
-                    
                     gheSuatChieuRepository.saveAll(allSeats);
                     System.out.println("✅ Mock seats successfully generated for all showtimes!");
                 }
@@ -222,9 +226,8 @@ public class DataSeeder {
         };
     }
     
-    private String determineSeatType(int index, int totalSeats) {
-        int vipSeatCount = (int) Math.ceil(totalSeats * 0.2);
-        int vipStartIndex = totalSeats - vipSeatCount + 1;
-        return index >= vipStartIndex ? "VIP" : "THUONG";
+    private String determineSeatType(int index) {
+     return index <= 30 ? "THUONG" : "VIP";
+
     }
 }

@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -22,13 +23,14 @@ import com.starview.cinemabooking.repository.GheSuatChieuRepository;
 import com.starview.cinemabooking.repository.PhimRepository;
 import com.starview.cinemabooking.repository.PhongChieuRepository;
 import com.starview.cinemabooking.repository.SuatChieuRepository;
+import com.starview.cinemabooking.dtos.GheSuatChieuDTO;
 
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class SuatChieuService {
-    private static final String SEAT_STATUS_TRONG = "Trống";
+    private static final String SEAT_STATUS_TRONG = "TRONG";
 
     private final SuatChieuRepository suatChieuRepository;
     private final GheSuatChieuRepository gheSuatChieuRepository;
@@ -65,7 +67,7 @@ public class SuatChieuService {
             GheSuatChieu ghe = new GheSuatChieu();
             ghe.setSuatChieu(savedSuatChieu);
             ghe.setDonHang(null);
-            ghe.setLoaiGhe(determineSeatType(i, totalSeats));
+            ghe.setLoaiGhe(determineSeatType(i));
             ghe.setTrangThai(SEAT_STATUS_TRONG);
             ghe.setThoiGianHetHanGiuCho(start);
             ghe.setPhienBan(1);
@@ -143,10 +145,9 @@ public class SuatChieuService {
         }
     }
 
-    private String determineSeatType(int index, int totalSeats) {
-        int vipSeatCount = (int) Math.ceil(totalSeats * 0.2);
-        int vipStartIndex = totalSeats - vipSeatCount + 1;
-        return index >= vipStartIndex ? "VIP" : "THUONG";
+    private String determineSeatType(int index) {
+       
+     return index <= 30 ? "THUONG" : "VIP";
     }
 
     private String resolveAvailabilityStatus(Integer totalSeats, long availableSeats) {
@@ -161,4 +162,18 @@ public class SuatChieuService {
 
         return "AVAILABLE";
     }
+    public List<GheSuatChieuDTO> getGheBySuatChieu(Integer suatChieuId) {
+    // 1. Lấy danh sách ghế từ database
+    List<GheSuatChieu> danhSachGhe = gheSuatChieuRepository.findBySuatChieu_Id(suatChieuId);
+    
+    // 2. Chuyển đổi Entity sang DTO để tránh lộ dữ liệu thừa
+    return danhSachGhe.stream().map(ghe -> {
+        GheSuatChieuDTO dto = new GheSuatChieuDTO();
+        dto.setId(ghe.getId());
+        dto.setSuatChieuId(ghe.getSuatChieu().getId());
+        dto.setLoaiGhe(ghe.getLoaiGhe());
+        dto.setTrangThai(ghe.getTrangThai());
+        return dto;
+    }).collect(Collectors.toList());
+}
 }

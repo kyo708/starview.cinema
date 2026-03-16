@@ -32,11 +32,11 @@ public class TicketService {
 		}
 		
 		for (GheSuatChieu ghe : listGhe) {
-			if (!ghe.getTrangThai().equals("Trống")) {
+			if (!ghe.getTrangThai().equals("TRONG")) {
 				throw new IllegalStateException("Ghế " + ghe.getId() + " đã được người khác đặt rồi");
 			}
 			
-			ghe.setTrangThai("Đang chờ");
+			ghe.setTrangThai("DANG_CHO");
 			ghe.setThoiGianHetHanGiuCho(LocalDateTime.now().plusMinutes(5));
 		}
 		
@@ -53,11 +53,11 @@ public class TicketService {
 	@Transactional
 	public void moGheHetHan() {
 		LocalDateTime now = LocalDateTime.now();
-		List<GheSuatChieu> listGheHetHan = gheSuatChieuRepository.findByTrangThaiAndThoiGianHetHanGiuChoBefore("Đang chờ", now);
+		List<GheSuatChieu> listGheHetHan = gheSuatChieuRepository.findByTrangThaiAndThoiGianHetHanGiuChoBefore("DANG_CHO", now);
 		
 		if (!listGheHetHan.isEmpty()) {
 			for (GheSuatChieu ghe : listGheHetHan) {
-				ghe.setTrangThai("Trống");
+				ghe.setTrangThai("TRONG");
 				ghe.setThoiGianHetHanGiuCho(null);
 			}
 			gheSuatChieuRepository.saveAll(listGheHetHan);

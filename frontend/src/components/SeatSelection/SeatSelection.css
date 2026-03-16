@@ -1,0 +1,414 @@
+
+/* Import Google Font */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+:root {
+  --background-color: #0f0f0f;
+  --text-color: #ffffff;
+  --accent-color: #ffb400;
+  --accent-color-darker: #ff8c00;
+  --seat-available-bg: #5a6373; /* A cooler, more modern grey */
+  --seat-available-top: #8d95a5;
+  --seat-sold-bg: #333333;
+  --seat-sold-top: #444444;
+  --seat-selected-bg: var(--accent-color);
+  --seat-selected-top: #ffcf40;
+  --seat-vip-bg: #c5a002; /* Màu vàng gold cho VIP */
+  --seat-vip-top: #fce282;
+  --font-family: 'Poppins', 'Segoe UI', sans-serif;
+  --card-bg: #1a1a1a;
+  --border-color: #333;
+}
+
+
+.seat-selection-container {
+  background-color: var(--background-color);
+  color: var(--text-color);
+  min-height: 100vh;
+  font-family: var(--font-family);
+  padding: 30px 4%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Nút Back Navigation (Đã được scope để không đụng độ với MovieShowtime) */
+.seat-selection-container .back-nav {
+  position: relative; /* Ghi đè position absolute bị rò rỉ từ MovieShowtime */
+  top: auto;
+  left: auto;
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 8px;
+  color: var(--accent-color);
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  z-index: 10;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: transform 0.2s ease, color 0.2s ease;
+  background: rgba(0,0,0,0.4);
+  padding: 8px 16px;
+  border-radius: 20px;
+  margin-bottom: 20px;
+}
+
+.seat-selection-container .back-nav:hover {
+  transform: translateX(-5px);
+  color: var(--accent-color-darker);
+}
+
+.seat-header {
+  text-align: left;
+  margin-bottom: 20px;
+  padding-left: 10px;
+}
+.seat-header h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+}
+.seat-header p {
+  font-size: 1rem;
+  color: #aaa;
+  margin: 4px 0 0;
+}
+
+.seat-main-layout {
+  display: flex;
+  justify-content: space-between;
+  gap: 30px;
+  flex-grow: 1;
+}
+
+/* --- LEFT & RIGHT PANELS --- */
+.left-panel, .right-panel {
+  width: 280px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.filter-group {
+  background: var(--card-bg);
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+.filter-group label {
+  font-weight: 600;
+  color: #aaa;
+  font-size: 0.9rem;
+  display: block;
+  margin-bottom: 15px;
+}
+
+.date-picker {
+  background: var(--background-color);
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  border: 1px solid #444;
+}
+
+.time-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+  gap: 10px;
+}
+
+.time-btn {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: #bbb;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+.time-btn.available:hover {
+  background-color: #2a2a2a;
+  border-color: #666;
+}
+.time-btn.active { 
+  background: var(--accent-color);
+  color: #000;
+  border-color: var(--accent-color);
+  font-weight: 700;
+  box-shadow: 0 0 15px rgba(255, 180, 0, 0.3);
+}
+.time-btn.sold { 
+  border-color: #2a2a2a;
+  background-color: #202020;
+  color: #555;
+  text-decoration: line-through;
+  cursor: not-allowed; 
+}
+
+/* --- CENTER PANEL: SEAT MAP --- */
+.center-panel {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0; /* Prevents overflow issues */
+}
+
+.screen-area {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 50px;
+}
+
+.screen-curve {
+  width: 90%;
+  height: 40px;
+  border-bottom: 3px solid #fff;
+  box-shadow: 0 15px 50px rgba(255, 255, 255, 0.3);
+  border-radius: 0 0 50% 50% / 0 0 100% 100%;
+  transform: perspective(300px) rotateX(-25deg);
+}
+
+.screen-text {
+  margin-top: -15px;
+  color: #ccc;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.seat-grid-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.seat-row {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Center rows for alignment */
+}
+
+.row-label {
+  width: 25px; /* Fixed width */
+  flex-shrink: 0;
+  color: #888;
+  font-weight: 600;
+  text-align: center;
+}
+
+.seats {
+  display: flex;
+  gap: 12px;
+}
+
+.aisle-gap {
+  width: 24px; /* Giảm khoảng cách lối đi */
+}
+
+/* -- NEW SEAT DESIGN -- */
+.seat {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.seat-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));
+  transition: filter 0.2s;
+}
+
+.seat-back, .seat-cushion, .seat-arm {
+  transition: fill 0.2s ease, filter 0.2s ease;
+}
+
+.seat-top {
+  transition: fill 0.2s ease;
+}
+
+.seat:not(.sold):hover { 
+  transform: translateY(-5px) scale(1.15); 
+}
+.seat:not(.sold):hover .seat-svg {
+  filter: drop-shadow(0 8px 10px rgba(0,0,0,0.6));
+}
+
+/* Seat states */
+.seat.available .seat-back { fill: var(--seat-available-bg); }
+.seat.available .seat-top { fill: var(--seat-available-top); }
+.seat.available .seat-cushion { fill: var(--seat-available-bg); filter: brightness(0.85); }
+.seat.available .seat-arm { fill: var(--seat-available-bg); filter: brightness(1.15); }
+
+/* VIP Seat state */
+.seat.vip.available .seat-back { fill: var(--seat-vip-bg); }
+.seat.vip.available .seat-top { fill: var(--seat-vip-top); }
+
+.seat.selected .seat-back { fill: var(--seat-selected-bg); }
+.seat.selected .seat-top { fill: var(--seat-selected-top); }
+.seat.selected .seat-cushion { fill: var(--seat-selected-bg); filter: brightness(0.9); }
+.seat.selected .seat-arm { fill: var(--seat-selected-bg); filter: brightness(1.1); }
+.seat.selected { transform: translateY(-2px) scale(1.08); }
+
+.seat.sold .seat-back { fill: var(--seat-sold-bg); }
+.seat.sold .seat-top { fill: var(--seat-sold-top); }
+.seat.sold .seat-cushion { fill: var(--seat-sold-bg); filter: brightness(0.7); }
+.seat.sold .seat-arm { fill: var(--seat-sold-bg); filter: brightness(1.2); }
+.seat.sold { cursor: not-allowed; opacity: 0.6; filter: grayscale(50%); }
+
+/* Tooltip for seat ID */
+.seat .tooltip {
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  bottom: 120%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--accent-color);
+  color: #000;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: opacity 0.2s, visibility 0.2s;
+}
+.seat:hover .tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
+
+/* --- LEGEND --- */
+.seat-legend {
+  display: flex;
+  gap: 25px;
+  margin-top: 40px;
+  color: #aaa;
+}
+.legend-item { 
+  display: flex; 
+  align-items: center; 
+  gap: 10px; 
+}
+/* Wrapper để style cho ghế trong legend mà không ảnh hưởng component Seat gốc */
+.legend-seat-wrapper .seat.vip .tooltip { display: none; }
+.legend-seat-wrapper .seat.thuong .tooltip { display: none; }
+
+.legend-seat-wrapper .seat {
+  width: 24px;
+  height: 24px;
+  cursor: default;
+}
+.legend-seat-wrapper .seat:hover { transform: none; }
+.legend-seat-wrapper .seat:hover .seat-svg { filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4)); }
+.legend-seat-wrapper .seat .tooltip { display: none; }
+
+
+/* --- RIGHT PANEL SUMMARY --- */
+.summary-card {
+  background: var(--card-bg);
+  padding: 25px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+}
+
+.summary-card h3 {
+  margin: 0 0 15px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 10px;
+}
+
+.summary-details {
+  flex-grow: 1;
+}
+
+.summary-details p { 
+  margin: 0 0 12px; 
+  font-size: 0.9rem; 
+  line-height: 1.4;
+  color: #ccc;
+}
+.summary-details span { 
+  color: #888; 
+  display: block; 
+  font-size: 0.8rem; 
+  margin-bottom: 4px;
+}
+
+.selected-seats-list {
+  background: var(--background-color);
+  padding: 10px;
+  border-radius: 8px;
+  min-height: 50px;
+  max-height: 120px;
+  overflow-y: auto;
+  margin-top: 5px;
+  border: 1px solid #2a2a2a;
+}
+.selected-seats-list .seat-pill {
+  display: inline-block;
+  background: var(--accent-color);
+  color: #000;
+  padding: 4px 10px;
+  border-radius: 12px;
+  margin: 4px;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+
+.total-price {
+  border-top: 1px solid var(--border-color);
+  margin-top: 20px;
+  padding-top: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+.total-price span:first-child { color: #aaa; }
+.total-price span:last-child { font-size: 1.5rem; color: var(--accent-color); font-weight: 700;}
+ 
+.btn-proceed {
+  width: 100%;
+  padding: 15px;
+  margin-top: 20px;
+  background: linear-gradient(90deg, var(--accent-color), var(--accent-color-darker));
+  border: none;
+  border-radius: 8px;
+  color: black;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.5px;
+}
+.btn-proceed:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(255, 140, 0, 0.2);
+}
+.btn-proceed:disabled { 
+  background: #3a3a3a;
+  box-shadow: none;
+  transform: none;
+  cursor: not-allowed; 
+  color: #666; 
+}
+.btn-proceed:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
