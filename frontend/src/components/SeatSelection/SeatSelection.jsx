@@ -3,12 +3,6 @@ import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import './SeatSelection.css';
 import Seat from './Seat'; // Import component Seat mới
 
-// Định nghĩa giá ghế (có thể lấy từ API trong tương lai)
-const PRICING = {
-  THUONG: 70000,
-  VIP: 100000,
-};
-
 function SeatSelection() {
   const { id } = useParams(); // Get movie ID from URL
   const [searchParams] = useSearchParams(); // Get query params
@@ -22,6 +16,7 @@ function SeatSelection() {
 
   const [movie, setMovie] = useState(null); // State for movie details
   const [seats, setSeats] = useState([]); // State lưu danh sách ghế 1 chiều từ API
+  const [showtimeData, setShowtimeData] = useState(null);
   const [isSeatsLoading, setIsSeatsLoading] = useState(true);
   const [isLocking, setIsLocking] = useState(false); // Trạng thái đang gọi API khóa ghế
   // State lưu các object ghế đang được chọn
@@ -38,6 +33,19 @@ function SeatSelection() {
       .then(data => setMovie(data))
       .catch(err => console.error("Lỗi tải phim:", err));
   }, [id]);
+
+  // Fetch thông tin chi tiết của Suất chiếu (để lấy heSoGia)
+  useEffect(() => {
+    if (!suatChieuId || suatChieuId === 'undefined') return;
+
+    fetch(`http://localhost:8080/api/v1/suat-chieu/${suatChieuId}`)
+      .then(res => {
+        if (!res.ok) throw new Error("Không tìm thấy suất chiếu");
+        return res.json();
+      })
+      .then(data => setShowtimeData(data))
+      .catch(err => console.error("Lỗi tải suất chiếu:", err));
+  }, [suatChieuId]);
 
   // Fetch danh sách ghế của suất chiếu
   useEffect(() => {
@@ -117,6 +125,7 @@ function SeatSelection() {
             formattedDate,
             showtime,
             selectedSeats: selectedSeats.map(s => s.seatLabel), // Chuyển sang mảng chuỗi để Payment.jsx dễ xử lý
+            selectedSeatIds: selectedSeats.map(s => s.id),      // THE FIX: Thêm dòng này để gửi ID cho Backend!
             totalPrice,
           }
         });
@@ -147,12 +156,23 @@ function SeatSelection() {
   
   // Tính tổng tiền động dựa trên loại ghế
   const totalPrice = useMemo(() => {
+    if (!movie) return 0;
+
+    // Lấy hệ số giá từ Backend, nếu chưa load xong thì mặc định là 1.0
+    const heSoGia = showtimeData?.heSoGia || 1.0;
+    
     return selectedSeats.reduce((total, seat) => {
-      // Nếu không có giá cho loại ghế này, mặc định là giá THUONG
-      const price = PRICING[seat.loaiGhe] || PRICING.THUONG;
+      // 1. Lấy giá gốc * Hệ số giá từ Database
+      let price = movie.giaGoc * heSoGia; 
+      
+      // 2. Cộng thêm phụ phí VIP (giống hệt logic TicketService ở Backend)
+      if (seat.loaiGhe === 'VIP') {
+        price += 30000;
+      }
+      
       return total + price;
     }, 0);
-  }, [selectedSeats, movie]);
+  }, [selectedSeats, movie, showtimeData]);
 
   // Format date for display
   const formattedDate = useMemo(() => {

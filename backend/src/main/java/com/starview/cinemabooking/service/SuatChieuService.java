@@ -4,9 +4,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -15,6 +17,8 @@ import com.starview.cinemabooking.dtos.CreateSuatChieuRequest;
 import com.starview.cinemabooking.dtos.MovieShowtimeItemDTO;
 import com.starview.cinemabooking.dtos.MovieShowtimesByDateResponse;
 import com.starview.cinemabooking.dtos.SuatChieuCreateResponse;
+import com.starview.cinemabooking.dtos.SuatChieuDTO;
+import com.starview.cinemabooking.mapper.SuatChieuMapper;
 import com.starview.cinemabooking.model.GheSuatChieu;
 import com.starview.cinemabooking.model.Phim;
 import com.starview.cinemabooking.model.PhongChieu;
@@ -164,16 +168,25 @@ public class SuatChieuService {
     }
     public List<GheSuatChieuDTO> getGheBySuatChieu(Integer suatChieuId) {
     // 1. Lấy danh sách ghế từ database
-    List<GheSuatChieu> danhSachGhe = gheSuatChieuRepository.findBySuatChieu_Id(suatChieuId);
+	    List<GheSuatChieu> danhSachGhe = gheSuatChieuRepository.findBySuatChieu_Id(suatChieuId);
+	    
+	    // 2. Chuyển đổi Entity sang DTO để tránh lộ dữ liệu thừa
+	    return danhSachGhe.stream().map(ghe -> {
+	        GheSuatChieuDTO dto = new GheSuatChieuDTO();
+	        dto.setId(ghe.getId());
+	        dto.setSuatChieuId(ghe.getSuatChieu().getId());
+	        dto.setLoaiGhe(ghe.getLoaiGhe());
+	        dto.setTrangThai(ghe.getTrangThai());
+	        return dto;
+	    }).collect(Collectors.toList());
+	}
     
-    // 2. Chuyển đổi Entity sang DTO để tránh lộ dữ liệu thừa
-    return danhSachGhe.stream().map(ghe -> {
-        GheSuatChieuDTO dto = new GheSuatChieuDTO();
-        dto.setId(ghe.getId());
-        dto.setSuatChieuId(ghe.getSuatChieu().getId());
-        dto.setLoaiGhe(ghe.getLoaiGhe());
-        dto.setTrangThai(ghe.getTrangThai());
-        return dto;
-    }).collect(Collectors.toList());
-}
+    // THE FIX: Thêm annotation này để giữ session mở cho Mapper
+    @Transactional(readOnly = true)
+    public SuatChieuDTO getSuatChieuById(Integer suatChieuId) {
+    	SuatChieu suatChieu = suatChieuRepository.findById(suatChieuId)
+    			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy suất chiếu với ID: " + suatChieuId));
+    	// Bây giờ Mapper có thể thoải mái lấy dữ liệu Phim và PhongChieu!
+    	return SuatChieuMapper.toDTO(suatChieu);
+    }
 }

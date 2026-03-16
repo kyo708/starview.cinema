@@ -13,7 +13,8 @@ function Payment() {
     cinemaName, 
     formattedDate, 
     showtime, 
-    selectedSeats, 
+    selectedSeats, // render UI
+    selectedSeatsIds, // gửi cho backend
     totalPrice 
   } = location.state || {};
 
@@ -37,40 +38,70 @@ function Payment() {
     );
   }
 
-  const handlePayment = (e) => {
+  const handlePayment = async (e) => {
     e.preventDefault();
     setIsProcessing(true);
     
-    // Giả lập thời gian gọi API thanh toán (2 giây)
-    setTimeout(() => {
-      setIsProcessing(false);
-      // Tạo một mã đặt chỗ ngẫu nhiên (VD: X7B9K2)
-      const bookingRef = Math.random().toString(36).substring(2, 8).toUpperCase();
+    try {
+      // 1. GỌI API BACKEND
+      const response = await fetch('http://localhost:8080/api/v1/bookings/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+          // Không có Authorization vì Khách không cần tài khoản
+        },
+        body: JSON.stringify({
+          // Lưu ý: Đảm bảo SeatSelection.jsx đã truyền 'selectedSeatIds' chứa mảng số nguyên [1, 2] qua location.state!
+          seatIds: location.state.selectedSeatIds, 
+          email: email,
+          phone: phone,
+          cardNumber: cardNumber 
+        })
+      });
 
-      // --- CHUẨN BỊ DỮ LIỆU GỬI EMAIL ---
-      // 1. Tạo link QR code
-      const qrData = `REF:${bookingRef}|MOVIE:${movie.tenPhim}|SEATS:${selectedSeats.join(',')}`;
+      // 2. XỬ LÝ LỖI (Ví dụ: Thẻ sai định dạng, ghế đã bị cướp mất, v.v.)
+      if (!response.ok) {
+        const errorMsg = await response.text();
+        throw new Error(errorMsg || "Giao dịch thất bại. Vui lòng thử lại!");
+      }
+
+      const data = await response.json(); // data từ Spring Boot trả về sẽ có dạng: { bookingRef: "DH5", totalPrice: 140000, message: "..." }
+
+      // 4. CHUẨN BỊ DỮ LIỆU QR
+      const qrData = `REF:${data.bookingRef}|MOVIE:${movie.tenPhim}|SEATS:${selectedSeats.join(',')}`;
       const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData)}&color=000000&bgcolor=ffffff`;
       
-      // 2. Gom dữ liệu vé
+      // 5. Gom dữ liệu vé
       const emailPayload = {
         to_email: email,
         customer_phone: phone,
         movie_name: movie.tenPhim,
         showtime: `${showtime} - ${formattedDate}`,
         seats: selectedSeats.join(', '),
-        total_price: `$${totalPrice}`,
-        booking_ref: bookingRef,
+        total_price: `$${data.totalPrice} ₫`, // Lấy giá CHUẨN từ Backend (US #8)
+        booking_ref: data.bookingRef, // Lấy mã Đơn hàng từ DB
         qr_image_link: qrUrl // Có thể nhúng trực tiếp link này vào thẻ <img> trong template email
       };
       console.log("Sẵn sàng gửi email vé tới:", email, emailPayload);
       
       //ta lưu dữ liệu và bật Popup
       setTicketData({
-        movie, cinemaName, formattedDate, showtime, selectedSeats, totalPrice, bookingRef, customerInfo: { email, phone }
+        movie, 
+        cinemaName, 
+        formattedDate, 
+        showtime, 
+        selectedSeats, // Vẫn truyền label A1, A2... để hiển thị trên vé
+        totalPrice: data.totalPrice, 
+        bookingRef: data.bookingRef, 
+        customerInfo: { email, phone }
       });
       setShowTicket(true);
-    }, 2000);
+    } catch (error){
+      console.error("Lỗi thanh toán: ", error);
+      alert(error.message); // Hiển thị lỗi từ backend lên màn hình (US #9 - AC #37)
+    } finally{
+      setIsProcessing(false);
+    }
   };
 
   return (

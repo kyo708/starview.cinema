@@ -46,6 +46,7 @@ public class SecurityConfig {
                         // Public endpoints
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/bookings/**").permitAll()
+                        .requestMatchers("/suat-chieu/**").permitAll()
                         .requestMatchers("/suat-chieu/*/ghe").permitAll() // Cho phép lấy danh sách ghế của suất chiếu
                         .requestMatchers("/suat-chieu/phim/**").permitAll()
                         .requestMatchers("/error/**").permitAll()

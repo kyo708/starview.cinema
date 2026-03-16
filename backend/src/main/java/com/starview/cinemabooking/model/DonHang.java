@@ -19,8 +19,14 @@ public class DonHang {
 
     // Relationship: NGUOI_DUNG ||--o{ DON_HANG
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "nguoi_dung_id", nullable = false)
+    @JoinColumn(name = "nguoi_dung_id", nullable = true) // Khách mua vé không cần TK
     private NguoiDung nguoiDung;
+    
+    @Column(name = "email_khach_hang", nullable = false)
+    private String emailKhachHang;
+
+    @Column(name = "sdt_khach_hang", nullable = false)
+    private String sdtKhachHang;
 
     @Column(name = "tong_tien", nullable = false)
     private Float tongTien;

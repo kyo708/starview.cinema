@@ -20,6 +20,8 @@ import com.starview.cinemabooking.dtos.CreateSuatChieuRequest;
 import com.starview.cinemabooking.dtos.MovieShowtimesByDateResponse;
 import com.starview.cinemabooking.dtos.GheSuatChieuDTO;
 import com.starview.cinemabooking.dtos.SuatChieuCreateResponse;
+import com.starview.cinemabooking.dtos.SuatChieuDTO;
+import com.starview.cinemabooking.model.SuatChieu;
 import com.starview.cinemabooking.service.SuatChieuService;
 
 import jakarta.validation.Valid;
@@ -56,5 +58,12 @@ public class SuatChieuController {
     @GetMapping("/{suatChieuId}/ghe")
     public ResponseEntity<List<GheSuatChieuDTO>> getGheBySuatChieu(@PathVariable Integer suatChieuId) {
         return ResponseEntity.ok(suatChieuService.getGheBySuatChieu(suatChieuId));
+    }
+    
+    @GetMapping("/{id}")
+    public ResponseEntity<SuatChieuDTO> getSuatChieuById(@PathVariable Integer id) {
+    	SuatChieuDTO suatChieuDTO = suatChieuService.getSuatChieuById(id);
+        return ResponseEntity.ok(suatChieuDTO);
+        
     }
 }
