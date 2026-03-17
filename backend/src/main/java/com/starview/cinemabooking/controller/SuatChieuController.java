@@ -39,6 +39,12 @@ import java.util.List;
 public class SuatChieuController {
     private final SuatChieuService suatChieuService;
 
+    @GetMapping("/staff")
+    @PreAuthorize("hasRole('STAFF')")
+    public ResponseEntity<List<SuatChieuDTO>> getAllShowtimes() {
+        return ResponseEntity.ok(suatChieuService.getAllSuatChieuStaff());
+    }
+
     @PostMapping("/staff")
     @PreAuthorize("hasRole('STAFF')")
     public ResponseEntity<SuatChieuCreateResponse> createShowtime(@Valid @RequestBody CreateSuatChieuRequest request) {

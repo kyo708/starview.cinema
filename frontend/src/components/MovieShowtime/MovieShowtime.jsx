@@ -33,6 +33,7 @@ function MovieShowtime() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [movie, setMovie] = useState(null);
+  const [movieError, setMovieError] = useState(null);
   const [isTrailerVisible, setIsTrailerVisible] = useState(false);
 
   // Tạo danh sách ngày và chỉ tính toán lại khi cần
@@ -41,6 +42,7 @@ function MovieShowtime() {
 
   // State lưu danh sách rạp và suất chiếu lấy từ API
   const [cinemasData, setCinemasData] = useState([]);
+  const [isShowtimesLoading, setIsShowtimesLoading] = useState(false);
 
   useEffect(() => {
     // Cuộn lên đầu trang mỗi khi vào chi tiết phim
@@ -49,21 +51,29 @@ function MovieShowtime() {
     // Gọi API lấy thông tin phim theo ID
     fetch(`http://localhost:8080/api/v1/phim/${id}`)
       .then(res => {
-        if (!res.ok) throw new Error("Không tìm thấy phim");
+        if (!res.ok) throw new Error("Phim không tồn tại hoặc đã tạm ẩn.");
         return res.json();
       })
       .then(data => setMovie(data))
-      .catch(err => console.error("Lỗi tải phim:", err));
+      .catch(err => {
+        console.error("Lỗi tải phim:", err);
+        setMovieError(err.message);
+      });
   }, [id]);
 
   // Gọi API lấy lịch chiếu khi đổi ngày hoặc phim
   useEffect(() => {
     if (!id || !selectedDate) return;
 
-    fetch(`http://localhost:8080/api/v1/suat-chieu/phim/${id}?date=${selectedDate}`)
-      .then(res => res.json())
-      .then(data => {
+    setIsShowtimesLoading(true);
+    setCinemasData([]); // Reset data cũ để tránh hiển thị nhầm lịch của ngày trước đó
 
+    fetch(`http://localhost:8080/api/v1/suat-chieu/phim/${id}?date=${selectedDate}`)
+      .then(res => {
+        if (!res.ok) throw new Error("Không thể tải lịch chiếu");
+        return res.json();
+      })
+      .then(data => {
         // Backend trả về object 
         const showtimesList = data.showtimes || [];
 
@@ -100,10 +110,22 @@ function MovieShowtime() {
       })
       .catch(err => {
         console.error("Lỗi tải lịch chiếu:", err);
+        setCinemasData([]);
+      })
+      .finally(() => {
+        setIsShowtimesLoading(false);
       });
   }, [id, selectedDate]);
 
-  if (!movie) return <div className="showtime-container" style={{padding: '100px', textAlign: 'center'}}>Đang tải thông tin phim...</div>;
+  if (movieError) return (
+    <div className="showtime-container" style={{padding: '100px', textAlign: 'center'}}>
+      <h2 style={{color: '#ffb400'}}>Rất tiếc!</h2>
+      <p>{movieError}</p>
+      <button onClick={() => navigate('/')} className="btn-book-now" style={{marginTop: '20px'}}>Quay lại trang chủ</button>
+    </div>
+  );
+
+  if (!movie) return <div className="showtime-container" style={{padding: '100px', textAlign: 'center'}}>Đang tải dữ liệu phim...</div>;
 
   return (
     <div className="showtime-container">
@@ -167,8 +189,14 @@ function MovieShowtime() {
 
           {/* Danh sách rạp và giờ chiếu */}
           <div className="cinema-list">
-            {cinemasData.length === 0 ? (
-              <p style={{textAlign: 'center', color: '#888', marginTop: '20px', fontSize: '1.1rem'}}>Chưa có suất chiếu nào trong ngày này.</p>
+            {isShowtimesLoading ? (
+              <p style={{textAlign: 'center', color: '#888', marginTop: '40px'}}>Đang cập nhật lịch chiếu...</p>
+            ) : cinemasData.length === 0 ? (
+              <div className="no-showtimes-message">
+                <span className="no-showtime-icon">🗓️</span>
+                <p>Không có suất chiếu nào cho ngày {selectedDate.split('-').reverse().join('/')}</p>
+                <p className="sub-text">Bạn vui lòng chọn ngày khác hoặc quay lại sau nhé!</p>
+              </div>
             ) : cinemasData.map((cinema) => (
               <div key={cinema.name} className="cinema-card">
                 <h5 className="cinema-name">{cinema.name}</h5>

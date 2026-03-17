@@ -1,0 +1,106 @@
+.admin-dashboard {
+    display: flex;
+    min-height: 100vh;
+    background-color: #121212;
+    color: #e0e0e0;
+    font-family: 'Inter', sans-serif;
+}
+
+/* SIDEBAR */
+.admin-sidebar {
+    width: 260px;
+    background-color: #1a1a1a;
+    border-right: 1px solid #333;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    height: 100vh;
+}
+
+.sidebar-brand {
+    padding: 30px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid #333;
+}
+
+.brand-icon { font-size: 24px; }
+.sidebar-brand h2 { font-size: 1.2rem; margin: 0; color: #ffb400; letter-spacing: 1px; }
+
+.sidebar-nav {
+    padding: 20px 0;
+    flex-grow: 1;
+}
+
+.nav-item {
+    width: 100%;
+    padding: 15px 30px;
+    background: none;
+    border: none;
+    color: #888;
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.95rem;
+    transition: all 0.3s;
+}
+
+.nav-item .icon { font-size: 1.2rem; }
+
+.nav-item:hover { background: #252525; color: #fff; }
+
+.nav-item.active {
+    background: rgba(255, 180, 0, 0.1);
+    color: #ffb400;
+    border-left: 4px solid #ffb400;
+}
+
+.sidebar-footer {
+    padding: 20px;
+    border-top: 1px solid #333;
+}
+
+.btn-logout-sidebar {
+    width: 100%;
+    padding: 10px;
+    background: #333;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+/* MAIN CONTENT */
+.admin-main-content {
+    margin-left: 260px; /* Bằng độ rộng sidebar */
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.content-header {
+    height: 70px;
+    background: #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 40px;
+    border-bottom: 1px solid #333;
+}
+
+.content-header h1 {
+    font-size: 1.4rem;
+    margin: 0;
+}
+
+.user-info {
+    font-size: 0.9rem;
+    color: #888;
+}
+
+.content-body {
+    padding: 30px 40px;
+}

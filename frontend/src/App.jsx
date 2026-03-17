@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Catalog from './components/Catalog/Catalog.jsx';
 import Navbar from './components/Navbar/Navbar.jsx';
-import AdminMovieManager from './components/Admin/AdminMovieManager';
+import AdminLayout from './components/Admin/AdminLayout.jsx';
 import Login from './components/Login/Login';
 import MovieShowtime from './components/MovieShowtime/MovieShowtime.jsx';
 import Register from './components/Register/Register.jsx';
@@ -47,7 +47,7 @@ function App() {
           {/* Route cho nhân viên: Trang quản lý phim */}
           <Route path="/admin" element={
             <ProtectedRoute>
-              <AdminMovieManager />
+              <AdminLayout />
             </ProtectedRoute>
           } />
 

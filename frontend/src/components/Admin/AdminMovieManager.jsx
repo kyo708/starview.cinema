@@ -9,6 +9,11 @@ function AdminMovieManager() {
   const [isEditing, setIsEditing] = useState(false);
   // State lưu ID của phim đang được chỉnh sửa
   const [currentId, setCurrentId] = useState(null);
+
+  // State cho bộ lọc
+  const [filterName, setFilterName] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+
   const navigate = useNavigate();
   
   // State quản lý dữ liệu của form nhập liệu
@@ -171,92 +176,115 @@ function AdminMovieManager() {
     });
   };
 
-  // Hàm đăng xuất
-  const handleLogout = () => {
-    sessionStorage.removeItem('token');
-    navigate('/login');
-  };
+  // Logic lọc phim tại client
+  const filteredMovies = movies.filter(movie => {
+    const matchName = movie.tenPhim?.toLowerCase().includes(filterName.toLowerCase());
+    const matchCategory = movie.theLoai?.toLowerCase().includes(filterCategory.toLowerCase());
+    return matchName && matchCategory;
+  });
 
   return (
-    <div className="admin-container">
-      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-        <h1 className="admin-title">Quản Lý Phim (Staff)</h1>
-        <button className="btn btn-secondary" onClick={handleLogout}>Đăng Xuất</button>
-      </div>
-      
-
+    <div className="showtime-manager">
       {/* FORM NHẬP LIỆU */}
-      <form className="movie-form" onSubmit={handleSubmit}>
-        <div className="form-group full-width">
-          <label>Tên Phim</label>
-          <input 
-            type="text" name="tenPhim" required 
-            value={formData.tenPhim} onChange={handleInputChange} 
-            placeholder="Nhập tên phim..."
-          />
-        </div>
+      <div className="admin-card">
+        <h3>{isEditing ? 'Chỉnh Sửa Phim' : 'Thêm Phim Mới'}</h3>
+        <form className="admin-form-grid" onSubmit={handleSubmit}>
+          <div className="form-group" style={{ gridColumn: 'span 2' }}>
+            <label>Tên Phim</label>
+            <input 
+              type="text" name="tenPhim" required 
+              value={formData.tenPhim} onChange={handleInputChange} 
+              placeholder="Nhập tên phim..."
+            />
+          </div>
 
-        <div className="form-group">
-          <label>Thể Loại</label>
-          <input 
-            type="text" name="theLoai" required 
-            value={formData.theLoai} onChange={handleInputChange} 
-            placeholder="Hành động, Hài..."
-          />
-        </div>
+          <div className="form-group">
+            <label>Thể Loại</label>
+            <input 
+              type="text" name="theLoai" required 
+              value={formData.theLoai} onChange={handleInputChange} 
+              placeholder="Hành động, Hài..."
+            />
+          </div>
 
-        <div className="form-group">
-          <label>Thời Lượng (phút)</label>
-          <input 
-            type="number" name="thoiLuongPhut" required 
-            value={formData.thoiLuongPhut} onChange={handleInputChange} 
-          />
-        </div>
+          <div className="form-group">
+            <label>Thời Lượng (phút)</label>
+            <input 
+              type="number" name="thoiLuongPhut" required 
+              value={formData.thoiLuongPhut} onChange={handleInputChange} 
+            />
+          </div>
 
-        <div className="form-group">
-          <label>Giá Gốc (VNĐ)</label>
-          <input 
-            type="number" name="giaGoc" required 
-            value={formData.giaGoc} onChange={handleInputChange} 
-          />
-        </div>
+          <div className="form-group">
+            <label>Giá Gốc (VNĐ)</label>
+            <input 
+              type="number" name="giaGoc" required 
+              value={formData.giaGoc} onChange={handleInputChange} 
+            />
+          </div>
 
-        <div className="form-group">
-          <label>Đánh Giá (0-10)</label>
-          <input 
-            type="number" step="0.1" max="10" min="0" 
-            name="danhGia" 
-            value={formData.danhGia} onChange={handleInputChange} 
-          />
-        </div>
+          <div className="form-group">
+            <label>Đánh Giá (0-10)</label>
+            <input 
+              type="number" step="0.1" max="10" min="0" 
+              name="danhGia" 
+              value={formData.danhGia} onChange={handleInputChange} 
+            />
+          </div>
 
-        <div className="form-group full-width">
-          <label>Poster URL (Link ảnh)</label>
-          <input 
-            type="text" name="posterUrl" 
-            value={formData.posterUrl} onChange={handleInputChange} 
-          />
-        </div>
+          <div className="form-group" style={{ gridColumn: 'span 2' }}>
+            <label>Poster URL (Link ảnh)</label>
+            <input 
+              type="text" name="posterUrl" 
+              value={formData.posterUrl} onChange={handleInputChange} 
+            />
+          </div>
 
-        <div className="form-group full-width">
-          <label>Trailer URL (Youtube)</label>
-          <input 
-            type="text" name="trailerUrl" 
-            value={formData.trailerUrl} onChange={handleInputChange} 
-          />
-        </div>
+          <div className="form-group" style={{ gridColumn: 'span 2' }}>
+            <label>Trailer URL (Youtube)</label>
+            <input 
+              type="text" name="trailerUrl" 
+              value={formData.trailerUrl} onChange={handleInputChange} 
+            />
+          </div>
 
-        <div className="form-actions">
-          {isEditing && <button type="button" className="btn btn-secondary" onClick={resetForm}>Hủy</button>}
-          <button type="submit" className="btn btn-primary">
-            {isEditing ? 'Cập Nhật Phim' : 'Thêm Phim Mới'}
-          </button>
+          <div className="form-actions" style={{ gridColumn: 'span 2', display: 'flex', gap: '10px', marginTop: '10px' }}>
+            <button type="submit" className="btn-primary-admin" style={{ flex: 1 }}>
+              {isEditing ? 'Cập Nhật Thay Đổi' : 'Xác Nhận Thêm Phim'}
+            </button>
+            {isEditing && (
+              <button type="button" className="btn-logout-sidebar" style={{ width: '100px', background: '#444' }} onClick={resetForm}>
+                Hủy
+              </button>
+            )}
+          </div>
+        </form>
+      </div>
+
+      {/* BỘ LỌC TÌM KIẾM */}
+      <div className="admin-card filter-section-admin">
+        <h4><span className="icon">🔍</span> Tìm kiếm phim</h4>
+        <div className="admin-form-grid">
+          <div className="form-group">
+            <label>Tên phim</label>
+            <input 
+              type="text" placeholder="Nhập tên phim cần tìm..." 
+              value={filterName} onChange={(e) => setFilterName(e.target.value)}
+            />
+          </div>
+          <div className="form-group">
+            <label>Thể loại</label>
+            <input 
+              type="text" placeholder="Lọc theo thể loại..." 
+              value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}
+            />
+          </div>
         </div>
-      </form>
+      </div>
 
       {/* DANH SÁCH PHIM */}
-      <div className="movie-table-container">
-        <table className="movie-table">
+      <div className="showtime-table-container">
+        <table className="showtime-table">
           <thead>
             <tr>
               <th>ID</th>
@@ -269,7 +297,7 @@ function AdminMovieManager() {
             </tr>
           </thead>
           <tbody>
-            {movies.map((movie) => (
+            {filteredMovies.map((movie) => (
               <tr key={movie.id} style={{ opacity: movie.isActive ? 1 : 0.5 }}>
                 <td>{movie.id}</td>
                 <td>
@@ -283,18 +311,18 @@ function AdminMovieManager() {
                 <td>{movie.giaGoc?.toLocaleString()} đ</td>
                 <td>
                   {movie.isActive ? 
-                    <span style={{color: 'green', fontWeight: 'bold'}}>Đang chiếu</span> : 
-                    <span style={{color: 'red'}}>Đã ẩn</span>
+                    <span style={{color: '#4caf50', fontWeight: 'bold'}}>● Đang chiếu</span> : 
+                    <span style={{color: '#f44336'}}>○ Đã ẩn</span>
                   }
                 </td>
                 <td>
-                  <button className="btn action-btn btn-edit" onClick={() => handleEdit(movie)}>Sửa</button>
+                  <button className="btn-primary-admin" style={{ padding: '6px 12px', fontSize: '0.8rem', marginRight: '5px' }} onClick={() => handleEdit(movie)}>Sửa</button>
                   {movie.isActive ? (
-                    <button className="btn action-btn btn-delete" onClick={() => handleDelete(movie.id)}>Ẩn</button>
+                    <button className="btn-logout-sidebar" style={{ padding: '6px 12px', fontSize: '0.8rem', display: 'inline', width: 'auto' }} onClick={() => handleDelete(movie.id)}>Ẩn</button>
                   ) : (
                     <>
-                      <button className="btn action-btn" style={{backgroundColor: '#28a745', color: 'white'}} onClick={() => handleRestore(movie.id)}>Hiện</button>
-                      <button className="btn action-btn btn-delete" style={{backgroundColor: '#333'}} onClick={() => handleHardDelete(movie.id)}>Xóa</button>
+                      <button className="btn-primary-admin" style={{ padding: '6px 12px', fontSize: '0.8rem', backgroundColor: '#28a745', marginRight: '5px' }} onClick={() => handleRestore(movie.id)}>Hiện</button>
+                      <button className="btn-logout-sidebar" style={{ padding: '6px 12px', fontSize: '0.8rem', display: 'inline', width: 'auto', background: '#d32f2f' }} onClick={() => handleHardDelete(movie.id)}>Xóa</button>
                     </>
                   )}
                 </td>

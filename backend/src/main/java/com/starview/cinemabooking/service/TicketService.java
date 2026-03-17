@@ -88,20 +88,12 @@ public class TicketService {
         }
 
         // 3. (US #8 - AC #34): backend tính tổng tiền
-        SuatChieu suatChieu = seats.get(0).getSuatChieu();
-        Phim phim = suatChieu.getPhim();
-        float basePrice = phim.getGiaGoc() * suatChieu.getHeSoGia();
-        float totalPrice = 0.0f;
+    	float totalPrice = 0.0f;
 
-        for (GheSuatChieu ghe : seats) {
-            float currentSeatPrice = basePrice;
-            // 100k vé VIP vs 70k vé Thường
-            if ("VIP".equalsIgnoreCase(ghe.getLoaiGhe())) {
-                currentSeatPrice += 30000; 
-            }
-            totalPrice += currentSeatPrice;
-        }
-
+		for (GheSuatChieu ghe : seats) {
+    // Chỉ cần gọi hàm tự tính tiền của cái ghế đó!
+   	 		totalPrice += ghe.calculatePrice();
+		}
         // 4. Tạo đơn hàng (US #9 - AC #38)
         DonHang donHang = new DonHang();
         donHang.setEmailKhachHang(request.getEmail());
