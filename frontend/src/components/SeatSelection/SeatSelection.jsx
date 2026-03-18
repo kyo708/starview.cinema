@@ -239,7 +239,7 @@ function SeatSelection() {
                     {seatsInRow.map(seat => {
                       const isSelected = selectedSeats.some(s => s.id === seat.id);
                       // Giả định lối đi sau ghế thứ 3 và 7
-                      const isAisle = seat.seatLabel.endsWith('3') || seat.seatLabel.endsWith('7');
+                      const isAisle = seat.seatLabel.endsWith('2') || seat.seatLabel.endsWith('8');
                       return (
                         <React.Fragment key={seat.id}>
                           <Seat 

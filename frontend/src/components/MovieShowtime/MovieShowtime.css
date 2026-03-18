@@ -298,3 +298,22 @@
   color: #666;
   cursor: not-allowed;
 }
+
+.no-showtimes-message {
+  text-align: center;
+  padding: 60px 20px;
+  background: #151515;
+  border-radius: 12px;
+  border: 1px dashed #333;
+  margin-top: 20px;
+}
+
+.no-showtime-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 15px;
+  opacity: 0.5;
+}
+
+.no-showtimes-message p { color: #888; margin: 0; font-size: 1.1rem; }
+.no-showtimes-message .sub-text { color: #555; font-size: 0.9rem; margin-top: 8px; }

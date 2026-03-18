@@ -42,4 +42,15 @@ public class GheSuatChieu {
     @Version
     @Column(name = "phien_ban")
     private int phienBan;
+    public float calculatePrice() {
+    // Lấy giá gốc của phim nhân với hệ số giá của suất chiếu
+    float basePrice = this.suatChieu.getPhim().getGiaGoc() * this.suatChieu.getHeSoGia();
+    
+    // Cộng phụ thu nếu là ghế VIP
+    if ("VIP".equalsIgnoreCase(this.loaiGhe)) {
+        return basePrice + 30000f; 
+    }
+    
+    return basePrice;
+}
 }

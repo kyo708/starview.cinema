@@ -41,6 +41,14 @@ public class SuatChieuService {
     private final PhimRepository phimRepository;
     private final PhongChieuRepository phongChieuRepository;
 
+    @Transactional(readOnly = true)
+    public List<SuatChieuDTO> getAllSuatChieuStaff() {
+        List<SuatChieu> entities = suatChieuRepository.findAll();
+        return entities.stream()
+                .map(SuatChieuMapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
     @Transactional
     public SuatChieuCreateResponse createSuatChieuWithSeats(CreateSuatChieuRequest request) {
         validateCreateRequest(request);
@@ -92,7 +100,16 @@ public class SuatChieuService {
         Phim phim = phimRepository.findById(phimId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Phim not found"));
 
-        LocalDateTime dayStart = date.atStartOfDay();
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime dayStart;
+
+        // Nếu ngày chọn là hôm nay, chỉ lấy các suất từ giờ hiện tại trở đi
+        if (date.equals(now.toLocalDate())) {
+            dayStart = now;
+        } else {
+            dayStart = date.atStartOfDay();
+        }
+        
         LocalDateTime nextDayStart = date.plusDays(1).atStartOfDay();
 
         List<SuatChieu> showtimes = suatChieuRepository
@@ -166,6 +183,7 @@ public class SuatChieuService {
 
         return "AVAILABLE";
     }
+    @Transactional(readOnly = true)
     public List<GheSuatChieuDTO> getGheBySuatChieu(Integer suatChieuId) {
     // 1. Lấy danh sách ghế từ database
 	    List<GheSuatChieu> danhSachGhe = gheSuatChieuRepository.findBySuatChieu_Id(suatChieuId);
@@ -177,6 +195,7 @@ public class SuatChieuService {
 	        dto.setSuatChieuId(ghe.getSuatChieu().getId());
 	        dto.setLoaiGhe(ghe.getLoaiGhe());
 	        dto.setTrangThai(ghe.getTrangThai());
+            dto.setGiaTien(ghe.calculatePrice());
 	        return dto;
 	    }).collect(Collectors.toList());
 	}
