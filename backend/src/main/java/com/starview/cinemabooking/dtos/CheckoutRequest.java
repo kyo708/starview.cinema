@@ -8,6 +8,8 @@ import lombok.Data;
 public class CheckoutRequest {
 	private List<Integer> seatIds;
 	
+	private String sessionId;
+	
 	private String email;
 	
 	private String phone;

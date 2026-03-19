@@ -29,29 +29,49 @@ public class TicketService {
 	// US 2.2
 	// #28: Chuyển trạng thái ghế và đặt thời gian giữ chỗ để thanh toán 
 	// #29: Tránh lỗi double booking, optimistic lock
+	// US 4.1
+	// #59: Khóa ghế theo Session ID 
 	@Transactional
-	public void lockGheSuatChieu(List<Integer> seatIds) {
-		List<GheSuatChieu> listGhe = gheSuatChieuRepository.findAllById(seatIds);
+	public void lockGheSuatChieu(Integer seatId, String sessionId) {
+		GheSuatChieu ghe = gheSuatChieuRepository.findById(seatId)
+                .orElseThrow(() -> new IllegalArgumentException("Ghế không tồn tại"));
 		
-		if(listGhe.size() != seatIds.size()) {
-			throw new IllegalArgumentException("Một hoặc nhiều ghế được đặt không tồn tại");
-		}
+		if (!ghe.getTrangThai().equals("TRONG")) {
+            // Idempotency: Nếu chính user này đã khóa ghế này rồi, thì bỏ qua không ném lỗi
+            if (ghe.getTrangThai().equals("DANG_CHO") && ghe.getPhienGiaoDich().equals(sessionId)) {
+                return; 
+            }
+            throw new IllegalStateException("Ghế này đã được người khác đặt. Vui lòng chọn ghế khác!");
+        }
 		
-		for (GheSuatChieu ghe : listGhe) {
-			if (!ghe.getTrangThai().equals("TRONG")) {
-				throw new IllegalStateException("Ghế " + ghe.getId() + " đã được người khác đặt rồi");
-			}
-			
-			ghe.setTrangThai("DANG_CHO");
-			ghe.setThoiGianHetHanGiuCho(LocalDateTime.now().plusMinutes(5));
-		}
+		ghe.setTrangThai("DANG_CHO");
+        ghe.setPhienGiaoDich(sessionId); // Gắn cờ sở hữu cho trình duyệt này
+        ghe.setThoiGianHetHanGiuCho(LocalDateTime.now().plusMinutes(5));
 		
 		try {
-			gheSuatChieuRepository.saveAll(listGhe);
+			gheSuatChieuRepository.save(ghe);
 		} catch (OptimisticLockingFailureException e) {
 			throw new IllegalStateException("Có người khác đặt trùng ghế này cùng tích tắc này với bạn");
 		}
 	}
+	
+	// US 4.1: Mở khóa ghế khi user bỏ chọn (Single Click)
+    @Transactional
+    public void unlockGheSuatChieu(Integer seatId, String sessionId) {
+        GheSuatChieu ghe = gheSuatChieuRepository.findById(seatId)
+                .orElseThrow(() -> new IllegalArgumentException("Ghế không tồn tại"));
+
+        // Chỉ cho phép mở khóa nếu ghế đang chờ VÀ thuộc về chính session này
+        if (ghe.getTrangThai().equals("DANG_CHO") && ghe.getPhienGiaoDich().equals(sessionId)) {
+            ghe.setTrangThai("TRONG");
+            ghe.setPhienGiaoDich(null);
+            ghe.setThoiGianHetHanGiuCho(null);
+            
+            gheSuatChieuRepository.save(ghe);
+        } else {
+            throw new IllegalStateException("Bạn không có quyền bỏ giữ ghế này.");
+        }
+    }
 	
 	// #30: Background task mở lại ghế đã quá thời gian giữ chỗ
 	// 60000 milli-giây
@@ -64,6 +84,7 @@ public class TicketService {
 		if (!listGheHetHan.isEmpty()) {
 			for (GheSuatChieu ghe : listGheHetHan) {
 				ghe.setTrangThai("TRONG");
+				ghe.setPhienGiaoDich(null);
 				ghe.setThoiGianHetHanGiuCho(null);
 			}
 			gheSuatChieuRepository.saveAll(listGheHetHan);
@@ -80,9 +101,9 @@ public class TicketService {
             throw new IllegalArgumentException("Một số ghế không tồn tại trong hệ thống.");
         }
 
-        // 2. Kiểm tra ghế có phải đang ở trạng thái "Đang chờ" không
+        // 2. Kiểm tra ghế có phải đang ở trạng thái "Đang chờ" VÀ thuộc session này không
         for (GheSuatChieu ghe : seats) {
-            if (!"DANG_CHO".equals(ghe.getTrangThai())) {
+            if (!ghe.getTrangThai().equals("DANG_CHO") || !ghe.getPhienGiaoDich().equals(request.getSessionId())) {
                 throw new IllegalStateException("Ghế " + ghe.getId() + " đã hết thời gian giữ chỗ hoặc đã bị mua. Trạng thái hiện tại: " + ghe.getTrangThai());
             }
         }
@@ -91,7 +112,7 @@ public class TicketService {
     	float totalPrice = 0.0f;
 
 		for (GheSuatChieu ghe : seats) {
-    // Chỉ cần gọi hàm tự tính tiền của cái ghế đó!
+			// Chỉ cần gọi hàm tự tính tiền của cái ghế đó!
    	 		totalPrice += ghe.calculatePrice();
 		}
         // 4. Tạo đơn hàng (US #9 - AC #38)
@@ -108,7 +129,8 @@ public class TicketService {
         // 5. UPDATE ghế (US #9 - AC #39)
         for (GheSuatChieu ghe : seats) {
             ghe.setDonHang(donHang);             
-            ghe.setTrangThai("DA_BAN");          
+            ghe.setTrangThai("DA_BAN");    
+            ghe.setPhienGiaoDich(null);
             ghe.setThoiGianHetHanGiuCho(null);   
         }
         

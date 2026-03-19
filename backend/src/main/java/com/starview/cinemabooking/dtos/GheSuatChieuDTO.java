@@ -19,4 +19,6 @@ public class GheSuatChieuDTO {
 	private String trangThai;
 	
 	private Float giaTien;
+	
+	private String phienGiaoDich;
 }

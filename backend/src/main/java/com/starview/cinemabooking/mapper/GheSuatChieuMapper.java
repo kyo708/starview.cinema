@@ -13,6 +13,8 @@ public class GheSuatChieuMapper {
         dto.setId(gheSuatChieu.getId());
         dto.setLoaiGhe(gheSuatChieu.getLoaiGhe());
         dto.setTrangThai(gheSuatChieu.getTrangThai());
+        dto.setGiaTien(gheSuatChieu.calculatePrice());
+        dto.setPhienGiaoDich(gheSuatChieu.getPhienGiaoDich());
         
         // Safely extract the ID from the related SuatChieu object
         if (gheSuatChieu.getSuatChieu() != null) {

@@ -18,6 +18,7 @@ import com.starview.cinemabooking.dtos.MovieShowtimeItemDTO;
 import com.starview.cinemabooking.dtos.MovieShowtimesByDateResponse;
 import com.starview.cinemabooking.dtos.SuatChieuCreateResponse;
 import com.starview.cinemabooking.dtos.SuatChieuDTO;
+import com.starview.cinemabooking.mapper.GheSuatChieuMapper;
 import com.starview.cinemabooking.mapper.SuatChieuMapper;
 import com.starview.cinemabooking.model.GheSuatChieu;
 import com.starview.cinemabooking.model.Phim;
@@ -189,15 +190,9 @@ public class SuatChieuService {
 	    List<GheSuatChieu> danhSachGhe = gheSuatChieuRepository.findBySuatChieu_Id(suatChieuId);
 	    
 	    // 2. Chuyển đổi Entity sang DTO để tránh lộ dữ liệu thừa
-	    return danhSachGhe.stream().map(ghe -> {
-	        GheSuatChieuDTO dto = new GheSuatChieuDTO();
-	        dto.setId(ghe.getId());
-	        dto.setSuatChieuId(ghe.getSuatChieu().getId());
-	        dto.setLoaiGhe(ghe.getLoaiGhe());
-	        dto.setTrangThai(ghe.getTrangThai());
-            dto.setGiaTien(ghe.calculatePrice());
-	        return dto;
-	    }).collect(Collectors.toList());
+	    return danhSachGhe.stream()
+	    		.map(GheSuatChieuMapper::toDto)
+	    		.collect(Collectors.toList());
 	}
     
     // THE FIX: Thêm annotation này để giữ session mở cho Mapper
