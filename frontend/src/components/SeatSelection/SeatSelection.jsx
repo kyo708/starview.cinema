@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import './SeatSelection.css';
 import Seat from './Seat'; // Import component Seat mới
@@ -17,8 +17,12 @@ function SeatSelection() {
   const [movie, setMovie] = useState(null); // State for movie details
   const [seats, setSeats] = useState([]); // State lưu danh sách ghế 1 chiều từ API
   const [showtimeData, setShowtimeData] = useState(null);
-  const [isSeatsLoading, setIsSeatsLoading] = useState(true);
-  const [isLocking, setIsLocking] = useState(false); // Trạng thái đang gọi API khóa ghế
+  const [isSeatsLoading, setIsSeatsLoading] = useState(true); // Trạng thái đang tải sơ đồ ghế
+  // Trạng thái để vô hiệu hóa nút "Proceed to Payment" khi đang chuyển hướng
+  const [countdown, setCountdown] = useState(0); // Thời gian đếm ngược (giây)
+  const countdownIntervalRef = useRef(null); // Ref để lưu ID của setInterval
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false); 
+
   // State lưu các object ghế đang được chọn
   const [selectedSeats, setSelectedSeats] = useState([]); 
 
@@ -34,6 +38,9 @@ function SeatSelection() {
       .catch(err => console.error("Lỗi tải phim:", err));
   }, [id]);
 
+  // Generate a unique session ID once when the component mounts
+  const sessionIdRef = useRef(crypto.randomUUID());
+
   // Fetch thông tin chi tiết của Suất chiếu (để lấy heSoGia)
   useEffect(() => {
     if (!suatChieuId || suatChieuId === 'undefined') return;
@@ -47,32 +54,85 @@ function SeatSelection() {
       .catch(err => console.error("Lỗi tải suất chiếu:", err));
   }, [suatChieuId]);
 
-  // Fetch danh sách ghế của suất chiếu
-  useEffect(() => {
+  // Function to fetch seats from the backend
+  const fetchSeats = () => {
     if (!suatChieuId || suatChieuId === 'undefined') {
       console.error(" LỖI: suatChieuId không tồn tại trên URL!");
       setIsSeatsLoading(false);
       return;
     }
-
+    setIsSeatsLoading(true); // Set loading true while fetching
     const url = `http://localhost:8080/api/v1/suat-chieu/${suatChieuId}/ghe`;
     console.log(" Đang gọi API lấy ghế tại:", url);
-
     fetch(url)
       .then(res => {
         if (!res.ok) throw new Error("Lỗi tải danh sách ghế");
         return res.json();
       })
       .then(data => {
-        console.log(" Dữ liệu ghế nhận được:", data);
         setSeats(data);
-        setIsSeatsLoading(false);
+        // After re-fetching, ensure selectedSeats are still valid
+        // Filter out any selected seats that are now marked as sold or not 'DANG_CHO' by this session
+        setSelectedSeats(currentSelected => {
+            const updatedSelected = currentSelected.filter(selectedSeat => {
+                const latestSeatData = data.find(s => s.id === selectedSeat.id);
+                // A seat is still "selected" if it's 'DANG_CHO' and belongs to this session
+                return latestSeatData && latestSeatData.trangThai === 'DANG_CHO' && latestSeatData.phienGiaoDich === sessionIdRef.current;
+            });
+            return updatedSelected;
+        });
       })
       .catch(err => {
         console.error(err);
-        setIsSeatsLoading(false);
+      })
+      .finally(() => {
+        setIsSeatsLoading(false); // Always set loading to false after fetch attempt
       });
+  };
+  // Fetch danh sách ghế của suất chiếu khi component mount hoặc suatChieuId thay đổi
+  useEffect(() => {
+    fetchSeats();
   }, [suatChieuId]);
+
+  // useEffect để quản lý bộ đếm ngược
+  useEffect(() => {
+    if (selectedSeats.length > 0 && countdownIntervalRef.current === null) {
+      // Bắt đầu đếm ngược khi có ghế được chọn và chưa có timer nào chạy
+      setCountdown(300); // 5 phút = 300 giây
+      countdownIntervalRef.current = setInterval(() => {
+        setCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(countdownIntervalRef.current);
+            countdownIntervalRef.current = null;
+            handleTimeout(); // Xử lý khi hết giờ
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else if (selectedSeats.length === 0 && countdownIntervalRef.current !== null) {
+      // Dừng đếm ngược khi không còn ghế nào được chọn
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+      setCountdown(0);
+    }
+
+    // Cleanup function: Xóa interval khi component unmount
+    return () => {
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+      }
+    };
+  }, [selectedSeats]); // Dependency array: chạy lại khi selectedSeats thay đổi
+
+  const handleTimeout = async () => {
+    alert("Thời gian giữ ghế đã hết. Các ghế bạn chọn đã được tự động nhả. Vui lòng chọn lại.");
+    // Backend sẽ tự động nhả ghế sau 5 phút, nhưng ta cũng cần cập nhật UI
+    setSelectedSeats([]); // Xóa các ghế đã chọn trên UI
+    fetchSeats(); // Tải lại sơ đồ ghế để cập nhật trạng thái
+  };
+
 
   // Thuật toán chuyển đổi mảng ghế 1D từ API thành lưới 2D để render
   const seatGrid = useMemo(() => {
@@ -103,55 +163,72 @@ function SeatSelection() {
     return rows;
   }, [seats]);
 
-  const handleProceedToPayment = async () => {
-    setIsLocking(true);
-    const seatIds = selectedSeats.map(s => s.id);
+  const handleSeatClick = async (seatObject) => {
+    // Không cho click ghế đã bán
+    if (seatObject.isSold) return;
+
+    const currentSessionId = sessionIdRef.current;
+    const isCurrentlySelected = selectedSeats.some(s => s.id === seatObject.id);
+    const url = isCurrentlySelected ? 'http://localhost:8080/api/v1/bookings/release' : 'http://localhost:8080/api/v1/bookings/hold';
 
     try {
-      const response = await fetch('http://localhost:8080/api/v1/bookings/hold', {
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ seatIds: seatIds })
+        body: JSON.stringify({
+          seatId: seatObject.id,
+          sessionId: currentSessionId
+        })
       });
 
       if (response.ok) {
-        // Nếu khóa ghế thành công trên DB, chuyển sang trang Payment
-        navigate('/payment', {
-          state: {
-            movie,
-            cinemaName,
-            formattedDate,
-            showtime,
-            selectedSeats: selectedSeats.map(s => s.seatLabel), // Chuyển sang mảng chuỗi để Payment.jsx dễ xử lý
-            selectedSeatIds: selectedSeats.map(s => s.id),      // THE FIX: Thêm dòng này để gửi ID cho Backend!
-            totalPrice,
+        setSelectedSeats(currentSelected => {
+          if (isCurrentlySelected) {
+            // If seat was selected, remove it
+            return currentSelected.filter(s => s.id !== seatObject.id); 
+          } else {
+            // If seat was not selected, add it
+            return [...currentSelected, seatObject]; 
           }
         });
       } else {
-        const errorData = await response.json();
-        alert(errorData.message || "Một trong những ghế bạn chọn vừa được người khác đặt. Vui lòng chọn ghế khác!");
-        window.location.reload(); // Reload để cập nhật trạng thái ghế mới nhất
+        // If API call fails, get error message and alert user
+        const errorMsg = await response.text(); 
+        alert(errorMsg || "Có lỗi xảy ra khi cập nhật trạng thái ghế. Vui lòng thử lại.");
+        // Re-fetch seats to ensure UI reflects the actual backend state
+        fetchSeats(); 
       }
     } catch (error) {
-      console.error("Lỗi khi khóa ghế:", error);
-      alert("Không thể kết nối tới hệ thống đặt vé. Vui lòng thử lại sau.");
-    } finally {
-      setIsLocking(false);
+      console.error("Lỗi khi gọi API khóa/mở khóa ghế:", error);
+      alert("Không thể kết nối tới hệ thống. Vui lòng thử lại sau.");
+      // Re-fetch seats in case of network error to update UI
+      fetchSeats(); 
     }
   };
 
-  const handleSeatClick = (seatObject) => {
-    // Không cho click ghế đã bán
-    if (seatObject.isSold) return;
+  const handleProceedToPayment = () => {
+    if (selectedSeats.length === 0) {
+      alert("Vui lòng chọn ít nhất một ghế để tiếp tục.");
+      return;
+    }
 
-    // Kiểm tra xem ghế đã được chọn chưa (dựa vào id)
-    setSelectedSeats(currentSelected =>
-      currentSelected.some(s => s.id === seatObject.id)
-        ? currentSelected.filter(s => s.id !== seatObject.id) // Bỏ chọn
-        : [...currentSelected, seatObject] // Thêm vào danh sách chọn
-    );
+    setIsProcessingPayment(true); // Indicate that navigation is in progress
+
+    // Navigate directly to the payment page, as seats are already held
+    navigate('/payment', {
+      state: {
+        movie,
+        cinemaName,
+        formattedDate,
+        showtime,
+        selectedSeats: selectedSeats.map(s => s.seatLabel), // Pass seat labels for display
+        selectedSeatIds: selectedSeats.map(s => s.id),      // Pass seat IDs for backend
+        totalPrice,
+        sessionId: sessionIdRef.current // Pass the current session ID for final checkout
+      }
+    });
   };
   
   // Tính tổng tiền động dựa trên loại ghế
@@ -165,10 +242,7 @@ function SeatSelection() {
       // 1. Lấy giá gốc * Hệ số giá từ Database
       let price = movie.giaGoc * heSoGia; 
       
-      // 2. Cộng thêm phụ phí VIP (giống hệt logic TicketService ở Backend)
-      if (seat.loaiGhe === 'VIP') {
-        price += 30000;
-      }
+   
       
       return total + price;
     }, 0);
@@ -293,6 +367,12 @@ function SeatSelection() {
                     : <span style={{color: '#888', fontSize: '0.9rem'}}>No seats selected</span>}
                 </div>
               </div>
+
+              {selectedSeats.length > 0 && (
+                <p className="countdown-timer">
+                  Thời gian giữ ghế: {Math.floor(countdown / 60).toString().padStart(2, '0')}:{(countdown % 60).toString().padStart(2, '0')}
+                </p>
+              )}
             </div>
             
             <div className="total-price">
@@ -302,10 +382,10 @@ function SeatSelection() {
             
             <button 
               className="btn-proceed" 
-              disabled={selectedSeats.length === 0 || isLocking}
+              disabled={selectedSeats.length === 0 || isProcessingPayment}
               onClick={handleProceedToPayment}
             >
-              {isLocking ? 'Processing...' : 'Proceed to Payment'}
+              {isProcessingPayment ? 'Đang chuyển hướng...' : 'Proceed to Payment'}
             </button>
           </div>
         </div>

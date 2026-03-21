@@ -135,9 +135,6 @@
   flex-shrink: 0;
 }
 
-/* Tái sử dụng class từ SeatSelection, import trực tiếp vào DOM */
-@import '../SeatSelection/SeatSelection.css';
-
 /* Responsive Layout */
 @media (max-width: 900px) {
   .payment-content {

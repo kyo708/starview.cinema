@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Ticket from '../Ticket/Ticket';
+import '../SeatSelection/SeatSelection.css';
 import './Payment.css';
 
 function Payment() {
@@ -15,7 +16,8 @@ function Payment() {
     showtime, 
     selectedSeats, // render UI
     selectedSeatsIds, // gửi cho backend
-    totalPrice 
+    totalPrice,
+    sessionId // Nhận sessionId từ SeatSelection
   } = location.state || {};
 
   // State cho Form thông tin khách hàng và thẻ tín dụng
@@ -53,7 +55,8 @@ function Payment() {
         body: JSON.stringify({
           // Lưu ý: Đảm bảo SeatSelection.jsx đã truyền 'selectedSeatIds' chứa mảng số nguyên [1, 2] qua location.state!
           seatIds: location.state.selectedSeatIds, 
-          email: email,
+          sessionId: sessionId, // Gửi sessionId lên backend để xác nhận ghế đã được giữ bởi session này
+          email: email, 
           phone: phone,
           cardNumber: cardNumber 
         })

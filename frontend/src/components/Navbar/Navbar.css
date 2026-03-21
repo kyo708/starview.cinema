@@ -32,7 +32,7 @@
 }
 
 .logo .star {
-  color: #ffb400; /* Ngôi sao màu vàng cam */
+  color: #ffb400; 
 }
 
 /* Các link menu */
@@ -83,16 +83,12 @@
   border: none;
   outline: none;
   font-size: 0.9rem;
-<<<<<<< HEAD
-  color: #fff
-=======
   color: #ffffff; /* Sửa lỗi chữ tàng hình */
   width: 150px;
 }
 
 .search-box input::placeholder {
   color: #666;
->>>>>>> 01f99274f8e264b8367fd3eddbae3cd196426d8e
 }
 
 .search-box button {
