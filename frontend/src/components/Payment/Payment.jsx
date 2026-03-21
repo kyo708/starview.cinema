@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Ticket from '../Ticket/Ticket';
 import '../SeatSelection/SeatSelection.css';
@@ -17,7 +17,10 @@ function Payment() {
     selectedSeats, // render UI
     selectedSeatsIds, // gửi cho backend
     totalPrice,
-    sessionId // Nhận sessionId từ SeatSelection
+    sessionId, // Nhận sessionId từ SeatSelection
+    currentCountdown, // Nhận countdown từ SeatSelection
+    suatChieuId, // Nhận để điều hướng ngược
+    showdate // Nhận để điều hướng ngược
   } = location.state || {};
 
   // State cho Form thông tin khách hàng và thẻ tín dụng
@@ -29,6 +32,39 @@ function Payment() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showTicket, setShowTicket] = useState(false);
   const [ticketData, setTicketData] = useState(null);
+
+  // State và Ref cho bộ đếm ngược trên trang Payment
+  const [paymentCountdown, setPaymentCountdown] = useState(currentCountdown || 0);
+  const paymentCountdownIntervalRef = useRef(null);
+
+  // useEffect để quản lý bộ đếm ngược trên trang Payment
+  useEffect(() => {
+    if (paymentCountdown > 0 && paymentCountdownIntervalRef.current === null) {
+      paymentCountdownIntervalRef.current = setInterval(() => {
+        setPaymentCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(paymentCountdownIntervalRef.current);
+            paymentCountdownIntervalRef.current = null;
+            alert("Thời gian giữ ghế đã hết. Vui lòng chọn lại ghế.");
+            // Xóa các ghế đã chọn và countdown khỏi sessionStorage khi hết giờ
+            sessionStorage.removeItem('STARVIEW_CART');
+            sessionStorage.removeItem('STARVIEW_COUNTDOWN');
+            // Điều hướng về trang chọn ghế, đảm bảo truyền đủ params
+            navigate(`/phim/${movie.id}/seatselection?cinema=${cinemaName}&time=${showtime}&date=${showdate}&suatChieuId=${suatChieuId}`);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (paymentCountdownIntervalRef.current) {
+        clearInterval(paymentCountdownIntervalRef.current);
+        paymentCountdownIntervalRef.current = null;
+      }
+    };
+  }, [paymentCountdown, navigate, movie, cinemaName, showtime, showdate, suatChieuId]); // Dependencies cho việc khởi tạo và điều hướng
 
   // Nếu người dùng vào thẳng link /payment mà không qua chọn ghế -> back về trang chủ
   if (!movie || !selectedSeats) {
@@ -192,6 +228,12 @@ function Payment() {
                   {selectedSeats.map(seat => <span key={seat} className="seat-pill">{seat}</span>)}
                 </div>
               </div>
+
+              {paymentCountdown > 0 && (
+                <p className="countdown-timer">
+                  Thời gian giữ ghế: {Math.floor(paymentCountdown / 60).toString().padStart(2, '0')}:{(paymentCountdown % 60).toString().padStart(2, '0')}
+                </p>
+              )}
             </div>
             <div className="total-price">
               <span>Total Price</span>

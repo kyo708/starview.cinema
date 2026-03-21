@@ -24,7 +24,10 @@ function SeatSelection() {
   const [isProcessingPayment, setIsProcessingPayment] = useState(false); 
 
   // State lưu các object ghế đang được chọn
-  const [selectedSeats, setSelectedSeats] = useState([]); 
+  const [selectedSeats, setSelectedSeats] = useState(() => {
+    const savedCart = sessionStorage.getItem('STARVIEW_CART');
+    return savedCart ? JSON.parse(savedCart) : [];
+  });
 
   // Fetch movie details when component mounts
   useEffect(() => {
@@ -39,7 +42,22 @@ function SeatSelection() {
   }, [id]);
 
   // Generate a unique session ID once when the component mounts
-  const sessionIdRef = useRef(crypto.randomUUID());
+  const sessionIdRef = useRef(
+    sessionStorage.getItem('STARVIEW_SESSION_ID') || crypto.randomUUID()
+  );
+
+  useEffect(() => {
+    sessionStorage.setItem('STARVIEW_SESSION_ID', sessionIdRef.current);
+  }, []);
+
+  // useEffect để lưu countdown vào sessionStorage mỗi khi nó thay đổi
+  useEffect(() => {
+    if (countdown > 0) {
+      sessionStorage.setItem('STARVIEW_COUNTDOWN', countdown.toString());
+    } else {
+      sessionStorage.removeItem('STARVIEW_COUNTDOWN');
+    }
+  }, [countdown]);
 
   // Fetch thông tin chi tiết của Suất chiếu (để lấy heSoGia)
   useEffect(() => {
@@ -71,15 +89,18 @@ function SeatSelection() {
       })
       .then(data => {
         setSeats(data);
-        // After re-fetching, ensure selectedSeats are still valid
-        // Filter out any selected seats that are now marked as sold or not 'DANG_CHO' by this session
-        setSelectedSeats(currentSelected => {
-            const updatedSelected = currentSelected.filter(selectedSeat => {
-                const latestSeatData = data.find(s => s.id === selectedSeat.id);
-                // A seat is still "selected" if it's 'DANG_CHO' and belongs to this session
-                return latestSeatData && latestSeatData.trangThai === 'DANG_CHO' && latestSeatData.phienGiaoDich === sessionIdRef.current;
-            });
-            return updatedSelected;
+        // 3. Khôi phục giỏ hàng: Chỉ giữ lại những ghế Backend báo là DANG_CHO
+        setSelectedSeats(prevCart => {
+            const validSeats = prevCart.map(savedSeat => {
+                const backendSeat = data.find(s => Number(s.id) === Number(savedSeat.id));
+                if (backendSeat && backendSeat.trangThai === 'DANG_CHO') {
+                    return { ...backendSeat, seatLabel: savedSeat.seatLabel };
+                }
+                return null;
+            }).filter(Boolean);
+            
+            sessionStorage.setItem('STARVIEW_CART', JSON.stringify(validSeats));
+            return validSeats;
         });
       })
       .catch(err => {
@@ -96,35 +117,41 @@ function SeatSelection() {
 
   // useEffect để quản lý bộ đếm ngược
   useEffect(() => {
+    // Nếu có ghế được chọn VÀ bộ đếm chưa chạy
     if (selectedSeats.length > 0 && countdownIntervalRef.current === null) {
-      // Bắt đầu đếm ngược khi có ghế được chọn và chưa có timer nào chạy
-      setCountdown(300); // 5 phút = 300 giây
+      // Lấy giá trị đếm ngược từ sessionStorage, nếu không có thì mặc định 300 giây
+      const savedCountdown = parseInt(sessionStorage.getItem('STARVIEW_COUNTDOWN') || '0', 10);
+      const startValue = savedCountdown > 0 ? savedCountdown : 300;
+      setCountdown(startValue); // Cập nhật state countdown
+
       countdownIntervalRef.current = setInterval(() => {
-        setCountdown(prev => {
+        setCountdown(prev => { // Sử dụng functional update để lấy giá trị prev mới nhất
           if (prev <= 1) {
             clearInterval(countdownIntervalRef.current);
             countdownIntervalRef.current = null;
-            handleTimeout(); // Xử lý khi hết giờ
+            sessionStorage.removeItem('STARVIEW_COUNTDOWN'); // Xóa khỏi storage khi hết giờ
+            handleTimeout();
             return 0;
           }
           return prev - 1;
         });
       }, 1000);
     } else if (selectedSeats.length === 0 && countdownIntervalRef.current !== null) {
-      // Dừng đếm ngược khi không còn ghế nào được chọn
+      // Nếu không còn ghế nào được chọn, dừng bộ đếm và reset
       clearInterval(countdownIntervalRef.current);
       countdownIntervalRef.current = null;
       setCountdown(0);
+      sessionStorage.removeItem('STARVIEW_COUNTDOWN'); // Xóa khỏi storage
     }
 
-    // Cleanup function: Xóa interval khi component unmount
+    // Cleanup function: Đảm bảo xóa interval khi component unmount hoặc useEffect chạy lại
     return () => {
       if (countdownIntervalRef.current) {
         clearInterval(countdownIntervalRef.current);
         countdownIntervalRef.current = null;
       }
     };
-  }, [selectedSeats]); // Dependency array: chạy lại khi selectedSeats thay đổi
+  }, [selectedSeats.length]); // Dependency array: chỉ chạy lại khi số lượng ghế được chọn thay đổi
 
   const handleTimeout = async () => {
     alert("Thời gian giữ ghế đã hết. Các ghế bạn chọn đã được tự động nhả. Vui lòng chọn lại.");
@@ -148,11 +175,13 @@ function SeatSelection() {
       const colIndex = (index % colsPerRow) + 1;
       const seatLabel = `${rowLabels[rowIndex]}${colIndex}`;
 
+      const isCurrentlySelected = selectedSeats.some(s => Number(s.id) === Number(seat.id));
+
       currentRow.push({
         ...seat,
-        seatLabel, // Gán nhãn ghế (A1, A2...)
-        // Chấp nhận cả TRONG và DANG_CHO (vì DANG_CHO cũng không được chọn tiếp)
-        isSold: seat.trangThai !== 'TRONG' && seat.trangThai !== 'Trống', 
+        seatLabel, 
+        // 4. LUẬT MỚI: Chỉ khóa NẾU (đã bán thật) HOẶC (đang chờ NHƯNG KHÔNG PHẢI của mình)
+        isSold: seat.trangThai === 'DA_BAN' || (seat.trangThai === 'DANG_CHO' && !isCurrentlySelected),
       });
 
       if (currentRow.length === colsPerRow || index === seats.length - 1) {
@@ -161,7 +190,7 @@ function SeatSelection() {
       }
     });
     return rows;
-  }, [seats]);
+  }, [seats, selectedSeats]);
 
   const handleSeatClick = async (seatObject) => {
     // Không cho click ghế đã bán
@@ -183,16 +212,24 @@ function SeatSelection() {
         })
       });
 
-      if (response.ok) {
+     if (response.ok) {
+        // 5. Cập nhật giỏ hàng và lưu ngay xuống ổ cứng
         setSelectedSeats(currentSelected => {
-          if (isCurrentlySelected) {
-            // If seat was selected, remove it
-            return currentSelected.filter(s => s.id !== seatObject.id); 
-          } else {
-            // If seat was not selected, add it
-            return [...currentSelected, seatObject]; 
-          }
+          let newSelected = isCurrentlySelected 
+            ? currentSelected.filter(s => Number(s.id) !== Number(seatObject.id))
+            : [...currentSelected, seatObject];
+            
+          sessionStorage.setItem('STARVIEW_CART', JSON.stringify(newSelected));
+          return newSelected;
         });
+
+        // 6. Tự động đổi trạng thái ghế trên sơ đồ để mở khóa màu sắc tức thì
+        setSeats(prevSeats => prevSeats.map(s => {
+          if (Number(s.id) === Number(seatObject.id)) {
+            return { ...s, trangThai: isCurrentlySelected ? 'TRONG' : 'DANG_CHO' };
+          }
+          return s;
+        }));
       } else {
         // If API call fails, get error message and alert user
         const errorMsg = await response.text(); 
@@ -226,27 +263,21 @@ function SeatSelection() {
         selectedSeats: selectedSeats.map(s => s.seatLabel), // Pass seat labels for display
         selectedSeatIds: selectedSeats.map(s => s.id),      // Pass seat IDs for backend
         totalPrice,
-        sessionId: sessionIdRef.current // Pass the current session ID for final checkout
+        sessionId: sessionIdRef.current, // Pass the current session ID for final checkout
+        currentCountdown: countdown, // Pass the current countdown value
+        suatChieuId: suatChieuId, // Pass for navigation back
+        showdate: showdate // Pass for navigation back
       }
     });
   };
   
   // Tính tổng tiền động dựa trên loại ghế
-  const totalPrice = useMemo(() => {
-    if (!movie) return 0;
-
-    // Lấy hệ số giá từ Backend, nếu chưa load xong thì mặc định là 1.0
-    const heSoGia = showtimeData?.heSoGia || 1.0;
-    
+const totalPrice = useMemo(() => {
     return selectedSeats.reduce((total, seat) => {
-      // 1. Lấy giá gốc * Hệ số giá từ Database
-      let price = movie.giaGoc * heSoGia; 
-      
-   
-      
-      return total + price;
+      // Bê nguyên con số giaTien mà Spring Boot đã tính toán sẵn đắp vào
+      return total + (seat.giaTien || 0); 
     }, 0);
-  }, [selectedSeats, movie, showtimeData]);
+  }, [selectedSeats]);
 
   // Format date for display
   const formattedDate = useMemo(() => {
