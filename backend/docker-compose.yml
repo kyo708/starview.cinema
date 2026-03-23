@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  # 1. The Database Container
+  db:
+    image: mysql:8.0
+    container_name: cinemabooking_mysql
+    environment:
+      MYSQL_DATABASE: starview_db
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+    # THE FIX: Tell Docker how to check if MySQL is actually ready
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # 2. Your Spring Boot App Container
+  backend:
+    build: .
+    container_name: cinemabooking_backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        # THE FIX: Tell Spring Boot to wait for the healthcheck to pass!
+        condition: service_healthy
+    environment:
+      # This overrides your application.properties variables!
+      # THE FIX: Use explicit Spring Boot variables to override all YAML files!
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/starview_db?useSSL=false&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=root
+      # THE FIX: Read from the .env file instead of hardcoding!
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+
+volumes:
+  db_data: # Keeps your database data safe even if the container stops
