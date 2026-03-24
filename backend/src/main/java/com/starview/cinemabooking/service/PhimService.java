@@ -12,10 +12,6 @@ import com.starview.cinemabooking.repository.PhimRepository;
 
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.data.jpa.domain.Specification;
-
-import org.springframework.data.jpa.domain.Specification;
-
 @Service
 @RequiredArgsConstructor
 public class PhimService {
@@ -91,23 +87,5 @@ public class PhimService {
                                 .orElseThrow(() -> new RuntimeException("Phim not found with id: " + id));
                 phim.setActive(true);
                 repository.save(phim);
-        }
-
-        // #66: Search movies by keyword and/or genre
-        public List<PhimDTO> searchMovies(String keyword, String theLoai) {
-                Specification<Phim> spec = Specification.where((root, query, cb) -> cb.isTrue(root.get("isActive")));
-
-                if (keyword != null && !keyword.isEmpty()) {
-                        spec = spec.and((root, query, cb) -> cb.like(cb.lower(root.get("tenPhim")), "%" + keyword.toLowerCase() + "%"));
-                }
-
-                if (theLoai != null && !theLoai.isEmpty()) {
-                        spec = spec.and((root, query, cb) -> cb.like(cb.lower(root.get("theLoai")), "%" + theLoai.toLowerCase() + "%"));
-                }
-
-                return repository.findAll(spec)
-                                .stream()
-                                .map(PhimMapper::toDTO)
-                                .collect(Collectors.toList());
         }
 }

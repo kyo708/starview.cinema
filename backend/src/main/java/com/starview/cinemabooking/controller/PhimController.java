@@ -78,12 +78,4 @@ public class PhimController {
 		phimService.restoreMovie(id);
 		return ResponseEntity.ok().build();
 	}
-
-	// #66: Search and filter movies
-	@GetMapping("/search")
-	public ResponseEntity<List<PhimDTO>> searchMovies(
-			@RequestParam(required = false) String keyword,
-			@RequestParam(required = false) String theLoai) {
-		return ResponseEntity.ok(phimService.searchMovies(keyword, theLoai));
-	}
 }
