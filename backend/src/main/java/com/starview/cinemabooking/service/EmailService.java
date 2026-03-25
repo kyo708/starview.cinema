@@ -1,50 +1,70 @@
 package com.starview.cinemabooking.service;
 
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import com.starview.cinemabooking.dtos.EmailTicketRequest;
 
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
+
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class EmailService {
 
-    private final JavaMailSender mailSender;
+	@Value("${brevo.api.key}")
+    private String apiKey;
 
-    @Async // Gửi email chạy ngầm, không block UI của user
+    @Value("${brevo.sender.email}")
+    private String senderEmail;
+
+    @Async
     public void sendTicketEmail(EmailTicketRequest request) {
+        RestTemplate restTemplate = new RestTemplate();
+        String brevoUrl = "https://api.brevo.com/v3/smtp/email";
+
+        // 1. Set the strict API Headers
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("api-key", apiKey);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+
+        // 2. Build the HTML Ticket
+        String htmlBody = "<h2>🎟️ Vé Xem Phim Của Bạn: " + request.getMovie_name() + "</h2>"
+                + "<p><strong>Suất chiếu:</strong> " + request.getShowtime() + "</p>"
+                + "<p><strong>Ghế:</strong> " + request.getSeats() + "</p>"
+                + "<p><strong>Tổng tiền:</strong> " + request.getTotal_price() + "</p>"
+                + "<br/><img src='" + request.getQr_image_link() + "' alt='Ticket QR Code'/>";
+
+        // 3. Construct the JSON Payload using standard Java Maps
+        Map<String, Object> body = new HashMap<>();
+        
+        // Who is sending it (Must match your verified Brevo email)
+        body.put("sender", Map.of("name", "StarView Cinema", "email", senderEmail));
+        
+        // Who is receiving it (Can be anyone!)
+        body.put("to", List.of(Map.of("email", request.getTo_email())));
+        
+        body.put("subject", "🎟️ Vé Xem Phim: " + request.getMovie_name());
+        body.put("htmlContent", htmlBody);
+
+        // 4. Fire the HTTPS Request through the firewall
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
+
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-            helper.setTo(request.getTo_email());
-            helper.setSubject("🎟️ Vé Xem Phim Của Bạn: " + request.getMovie_name());
-
-            // Tạo HTML Template nhúng thẳng link QR Code từ Frontend
-            String htmlMsg = "<div style='font-family: Arial, sans-serif; padding: 20px; text-align: center;'>"
-                    + "<h2>Thanh toán thành công!</h2>"
-                    + "<p>Mã đặt chỗ: <strong>" + request.getBooking_ref() + "</strong></p>"
-                    + "<hr/>"
-                    + "<h3>" + request.getMovie_name() + "</h3>"
-                    + "<p><strong>Suất chiếu:</strong> " + request.getShowtime() + "</p>"
-                    + "<p><strong>Ghế:</strong> " + request.getSeats() + "</p>"
-                    + "<p><strong>Tổng tiền:</strong> " + request.getTotal_price() + "</p>"
-                    + "<br/>"
-                    + "<img src='" + request.getQr_image_link() + "' alt='QR Code' width='200' height='200'/>"
-                    + "<p>Vui lòng xuất trình mã QR này tại rạp StarView Cinemas.</p>"
-                    + "</div>";
-
-            helper.setText(htmlMsg, true);
-            mailSender.send(message);
-
-        } catch (MessagingException e) {
-            System.err.println("Lỗi gửi email: " + e.getMessage());
+            restTemplate.postForEntity(brevoUrl, entity, String.class);
+            System.out.println("✅ Email sent successfully to " + request.getTo_email() + " via Brevo!");
+        } catch (Exception e) {
+            System.err.println("❌ Failed to send email via Brevo: " + e.getMessage());
         }
     }
 }
