@@ -51,7 +51,7 @@ function Payment() {
       // Ép backend nhả toàn bộ ghế dựa vào danh sách ID ghế đã lưu ở bước trước
       if (selectedSeatIds && selectedSeatIds.length > 0 && sessionId) {
         const releasePromises = selectedSeatIds.map(seatId =>
-          fetch('http://localhost:8080/api/v1/bookings/release', {
+          fetch(`${baseUrl}/api/v1/bookings/release`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ seatId: seatId, sessionId: sessionId }),
