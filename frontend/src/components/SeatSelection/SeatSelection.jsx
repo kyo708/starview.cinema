@@ -3,6 +3,8 @@ import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import './SeatSelection.css';
 import Seat from './Seat'; // Import component Seat mới
 
+const baseUrl = import.meta.env.VITE_BASE_URL || 'http://localhost:8080';
+
 function SeatSelection() {
   const { id } = useParams(); // Get movie ID from URL
   const [searchParams] = useSearchParams(); // Get query params
@@ -32,7 +34,7 @@ function SeatSelection() {
   // Fetch movie details when component mounts
   useEffect(() => {
     // This is the same fetch as in MovieShowtime
-    fetch(`http://localhost:8080/api/v1/phim/${id}`)
+    fetch(`${baseUrl}/api/v1/phim/${id}`)
       .then(res => {
         if (!res.ok) throw new Error("Không tìm thấy phim");
         return res.json();
@@ -63,7 +65,7 @@ function SeatSelection() {
   useEffect(() => {
     if (!suatChieuId || suatChieuId === 'undefined') return;
 
-    fetch(`http://localhost:8080/api/v1/suat-chieu/${suatChieuId}`)
+    fetch(`${baseUrl}/api/v1/suat-chieu/${suatChieuId}`)
       .then(res => {
         if (!res.ok) throw new Error("Không tìm thấy suất chiếu");
         return res.json();
@@ -80,7 +82,7 @@ function SeatSelection() {
       return;
     }
     setIsSeatsLoading(true); // Set loading true while fetching
-    const url = `http://localhost:8080/api/v1/suat-chieu/${suatChieuId}/ghe`;
+    const url = `${baseUrl}/api/v1/suat-chieu/${suatChieuId}/ghe`;
     console.log(" Đang gọi API lấy ghế tại:", url);
     fetch(url)
       .then(res => {
@@ -151,16 +153,40 @@ function SeatSelection() {
         countdownIntervalRef.current = null;
       }
     };
-  }, [selectedSeats.length]); // Dependency array: chỉ chạy lại khi số lượng ghế được chọn thay đổi
+  }, [selectedSeats]); // Dependency array: chạy lại khi nội dung giỏ hàng thay đổi
 
   const handleTimeout = async () => {
+    const seatsToRelease = [...selectedSeats]; // Capture seats before clearing state.
+
     alert("Thời gian giữ ghế đã hết. Các ghế bạn chọn đã được tự động nhả. Vui lòng chọn lại.");
-    // Backend sẽ tự động nhả ghế sau 5 phút, nhưng ta cũng cần cập nhật UI
-    setSelectedSeats([]); // Xóa các ghế đã chọn trên UI
-    fetchSeats(); // Tải lại sơ đồ ghế để cập nhật trạng thái
+
+    // Clear local state and storage immediately for responsiveness.
+    setSelectedSeats([]);
+    sessionStorage.removeItem('STARVIEW_CART');
+
+    // If there were seats selected, explicitly tell the backend to release them.
+    if (seatsToRelease.length > 0) {
+      const releasePromises = seatsToRelease.map(seat =>
+        fetch(`${baseUrl}/api/v1/bookings/release`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ seatId: seat.id, sessionId: sessionIdRef.current }),
+        })
+      );
+
+      try {
+        await Promise.allSettled(releasePromises);
+        console.log("Attempted to release timed-out seats from backend.");
+      } catch (e) {
+        console.error("Error during seat release on timeout", e);
+      }
+    }
+
+    // Re-fetch the entire seat map to get the most up-to-date state.
+    fetchSeats();
   };
 
-
+  
   // Thuật toán chuyển đổi mảng ghế 1D từ API thành lưới 2D để render
   const seatGrid = useMemo(() => {
     if (!seats || seats.length === 0) return [];
@@ -198,7 +224,7 @@ function SeatSelection() {
 
     const currentSessionId = sessionIdRef.current;
     const isCurrentlySelected = selectedSeats.some(s => s.id === seatObject.id);
-    const url = isCurrentlySelected ? 'http://localhost:8080/api/v1/bookings/release' : 'http://localhost:8080/api/v1/bookings/hold';
+    const url = isCurrentlySelected ? `${baseUrl}/api/v1/bookings/release` : `${baseUrl}/api/v1/bookings/hold`;
 
     try {
       const response = await fetch(url, {

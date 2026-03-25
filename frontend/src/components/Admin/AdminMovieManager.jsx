@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './AdminMovieManager.css';
 
+
+const baseUrl = import.meta.env.VITE_BASE_URL || 'http://localhost:8080';
+
+
 function AdminMovieManager() {
   // State lưu trữ danh sách phim lấy từ API
   const [movies, setMovies] = useState([]);
@@ -28,7 +32,7 @@ function AdminMovieManager() {
   });
 
   // URL API gốc (Lưu ý: Backend chạy port 8080)
-  const API_URL = 'http://localhost:8080/api/v1/phim/staff'; 
+  const API_URL = `${baseUrl}/api/v1/phim/staff`; 
 
   // Hàm lấy token từ localStorage (giả sử bạn đã lưu khi login)
   // Cần thiết để vượt qua Security của Backend (Role STAFF)

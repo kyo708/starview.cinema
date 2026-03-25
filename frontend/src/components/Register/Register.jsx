@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './Register.css';
 
+const baseUrl = import.meta.env.VITE_BASE_URL || 'http://localhost:8080';
+
 function Register() {
   const [formData, setFormData] = useState({
     hoTen: '',
@@ -24,7 +26,7 @@ function Register() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:8080/api/v1/auth/register', {
+      const response = await fetch(`${baseUrl}/api/v1/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...formData, vaiTro: null }) 

@@ -58,3 +58,11 @@ Thumbs.db
 skills
 .claude
 .agents
+
+# ==========================================
+# 5. DOCKER SECRETS
+# ==========================================
+backend/.env
+# Ignore ALL environment variable files anywhere in the project
+.env
+.env.*

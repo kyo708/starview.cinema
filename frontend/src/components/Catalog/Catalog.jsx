@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import './Catalog.css';
 import MovieCard from '../MovieCard/MovieCard';
 
+const baseUrl = import.meta.env.VITE_BASE_URL || 'http://localhost:8080';
+
 function Catalog() {
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -14,7 +16,7 @@ function Catalog() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    fetch('http://localhost:8080/api/v1/phim')
+    fetch(`${baseUrl}/api/v1/phim`)
       .then(res => res.json())
       .then(data => {
         setMovies(data);

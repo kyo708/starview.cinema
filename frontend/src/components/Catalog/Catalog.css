@@ -14,7 +14,7 @@
   width: 100%;
   height: 600px; /* Chiếm 80% chiều cao màn hình, gọn hơn */
   background-size: cover;
-  background-position: 50% 25%; /* Căn giữa ngang, neo ở vị trí 25% từ trên xuống (khu vực mắt/mặt) */
+  background-position: 50% 25%; 
   transition: background-image 0.8s ease-in-out; /* Hiệu ứng chuyển ảnh mượt */
 }
 
@@ -22,12 +22,12 @@
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
   /* Phủ đen từ dưới lên và từ trái qua phải để hiện rõ thông tin */
-  background: linear-gradient(to top, #000000 25%, rgba(0,0,0,0) 70%); /* Gradient mạnh hơn từ dưới lên */
+  background: linear-gradient(to top, #000000 25%, rgba(0,0,0,0) 70%); 
 }
 
 .catalog-hero-content {
   position: absolute;
-  top: 42%; /* Căn giữa theo chiều dọc */
+  top: 42%; 
   left: 5%;
   transform: translateY(-50%); 
   z-index: 20;
@@ -40,12 +40,12 @@ flex-direction: column;
 
 .hero-meta {
   color: #ccc;
-  font-size: 0.85rem; /* Nhỏ hơn */
+  font-size: 0.85rem; 
   margin-bottom: 10px;
 }
 
 .hero-title {
-  font-size: 2.5rem; /* Nhỏ hơn */
+  font-size: 2.5rem; 
   font-weight: 900;
   margin: 0 0 10px 0;
   line-height: 1.1;
@@ -118,12 +118,12 @@ flex-direction: column;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 15px;
-  padding-right: 0; /* Xóa padding ảo vì khung đã vừa khít màn hình */
+  padding-right: 0; 
 }
 
 .carousel-title {
   font-size: 1.2rem;
-  margin-bottom: 0; /* Bỏ margin bottom cũ */
+  margin-bottom: 0; 
   text-align: left; /* Căn lề trái */
   z-index: 0;
 }

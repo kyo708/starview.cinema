@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import './MovieShowtime.css';
 import TrailerModal from '../TrailerModal/TrailerModal';
 
+const baseUrl = import.meta.env.VITE_BASE_URL || 'http://localhost:8080';
+
 // Helper function để tạo danh sách 7 ngày tiếp theo
 const getNext7Days = () => {
   const days = [];
@@ -49,7 +51,7 @@ function MovieShowtime() {
     window.scrollTo(0, 0);
 
     // Gọi API lấy thông tin phim theo ID
-    fetch(`http://localhost:8080/api/v1/phim/${id}`)
+    fetch(`${baseUrl}/api/v1/phim/${id}`)
       .then(res => {
         if (!res.ok) throw new Error("Phim không tồn tại hoặc đã tạm ẩn.");
         return res.json();
@@ -68,7 +70,7 @@ function MovieShowtime() {
     setIsShowtimesLoading(true);
     setCinemasData([]); // Reset data cũ để tránh hiển thị nhầm lịch của ngày trước đó
 
-    fetch(`http://localhost:8080/api/v1/suat-chieu/phim/${id}?date=${selectedDate}`)
+    fetch(`${baseUrl}/api/v1/suat-chieu/phim/${id}?date=${selectedDate}`)
       .then(res => {
         if (!res.ok) throw new Error("Không thể tải lịch chiếu");
         return res.json();

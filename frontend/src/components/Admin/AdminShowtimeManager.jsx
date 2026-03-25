@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './AdminShowtimeManager.css';
 
+const baseUrl = import.meta.env.VITE_BASE_URL || 'http://localhost:8080';
+
 function AdminShowtimeManager() {
   const [movies, setMovies] = useState([]);
   const [showtimes, setShowtimes] = useState([]);
@@ -19,7 +21,7 @@ function AdminShowtimeManager() {
     heSoGia: 1.0
   });
 
-  const API_URL = 'http://localhost:8080/api/v1/suat-chieu/staff';
+  const API_URL = `${baseUrl}/api/v1/suat-chieu/staff`;
   const token = sessionStorage.getItem('token');
   const headers = {
     'Content-Type': 'application/json',
@@ -46,12 +48,12 @@ function AdminShowtimeManager() {
 
   useEffect(() => {
     // Load danh sách phim để đổ vào dropdown
-    fetch('http://localhost:8080/api/v1/phim')
+    fetch(`${baseUrl}/api/v1/phim`)
       .then(res => res.json())
       .then(data => setMovies(data));
 
     // Load danh sách phòng từ API để dùng cho Form và Filter
-    fetch('http://localhost:8080/api/v1/phong-chieu/staff', { headers })
+    fetch(`${baseUrl}/api/v1/phong-chieu/staff`, { headers })
       .then(res => res.json())
       .then(data => setRooms(data))
       .catch(err => console.error("Lỗi load phòng:", err));

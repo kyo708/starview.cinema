@@ -4,6 +4,8 @@ import Ticket from '../Ticket/Ticket';
 import '../SeatSelection/SeatSelection.css';
 import './Payment.css';
 
+const baseUrl = import.meta.env.VITE_BASE_URL || 'http://localhost:8080';
+
 function Payment() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -105,7 +107,7 @@ function Payment() {
     
     try {
       // 1. GỌI API BACKEND
-      const response = await fetch('http://localhost:8080/api/v1/bookings/checkout', {
+      const response = await fetch(`${baseUrl}/api/v1/bookings/checkout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
