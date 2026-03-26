@@ -131,7 +131,8 @@ function Payment() {
         },
         body: JSON.stringify({
           // Lưu ý: Đảm bảo SeatSelection.jsx đã truyền 'selectedSeatIds' chứa mảng số nguyên [1, 2] qua location.state!
-          seatIds: location.state.selectedSeatIds, 
+          seatIds: location.state.selectedSeatIds,
+          seatNames: selectedSeats, 
           sessionId: sessionId, // Gửi sessionId lên backend để xác nhận ghế đã được giữ bởi session này
           email: email, 
           phone: phone,
