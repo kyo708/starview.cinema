@@ -153,16 +153,40 @@ function SeatSelection() {
         countdownIntervalRef.current = null;
       }
     };
-  }, [selectedSeats.length]); // Dependency array: chỉ chạy lại khi số lượng ghế được chọn thay đổi
+  }, [selectedSeats]); // Dependency array: chạy lại khi nội dung giỏ hàng thay đổi
 
   const handleTimeout = async () => {
+    const seatsToRelease = [...selectedSeats]; // Capture seats before clearing state.
+
     alert("Thời gian giữ ghế đã hết. Các ghế bạn chọn đã được tự động nhả. Vui lòng chọn lại.");
-    // Backend sẽ tự động nhả ghế sau 5 phút, nhưng ta cũng cần cập nhật UI
-    setSelectedSeats([]); // Xóa các ghế đã chọn trên UI
-    fetchSeats(); // Tải lại sơ đồ ghế để cập nhật trạng thái
+
+    // Clear local state and storage immediately for responsiveness.
+    setSelectedSeats([]);
+    sessionStorage.removeItem('STARVIEW_CART');
+
+    // If there were seats selected, explicitly tell the backend to release them.
+    if (seatsToRelease.length > 0) {
+      const releasePromises = seatsToRelease.map(seat =>
+        fetch(`${baseUrl}/api/v1/bookings/release`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ seatId: seat.id, sessionId: sessionIdRef.current }),
+        })
+      );
+
+      try {
+        await Promise.allSettled(releasePromises);
+        console.log("Attempted to release timed-out seats from backend.");
+      } catch (e) {
+        console.error("Error during seat release on timeout", e);
+      }
+    }
+
+    // Re-fetch the entire seat map to get the most up-to-date state.
+    fetchSeats();
   };
 
-
+  
   // Thuật toán chuyển đổi mảng ghế 1D từ API thành lưới 2D để render
   const seatGrid = useMemo(() => {
     if (!seats || seats.length === 0) return [];

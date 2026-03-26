@@ -15,4 +15,6 @@ public class CheckoutRequest {
 	private String phone;
 	
 	private String cardNumber;
+	
+	private List<String> seatNames;
 }

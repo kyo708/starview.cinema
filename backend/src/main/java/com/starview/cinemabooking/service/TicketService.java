@@ -1,5 +1,7 @@
 package com.starview.cinemabooking.service;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -9,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.starview.cinemabooking.dtos.CheckoutRequest;
+import com.starview.cinemabooking.dtos.EmailTicketRequest;
 import com.starview.cinemabooking.model.DonHang;
 import com.starview.cinemabooking.model.GheSuatChieu;
 import com.starview.cinemabooking.model.Phim;
@@ -25,6 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TicketService {
 	private final GheSuatChieuRepository gheSuatChieuRepository;
 	private final DonHangRepository donHangRepository;
+	private final EmailService emailService;
 	
 	// US 2.2
 	// #28: Chuyển trạng thái ghế và đặt thời gian giữ chỗ để thanh toán 
@@ -135,6 +139,40 @@ public class TicketService {
         }
         
         gheSuatChieuRepository.saveAll(seats);
+        
+        // 6. Gửi email
+        // 1. Extract basic details
+        String movieName = seats.get(0).getSuatChieu().getPhim().getTenPhim();
+        String showtime = seats.get(0).getSuatChieu().getThoiGianChieu().toString();
+        
+        // 2. Format the Seat Names (e.g., "A1, A2")
+        String joinedSeatNames = String.join(", ", request.getSeatNames());
+        
+        // 3. Generate the Booking Reference (Matching your format)
+        String bookingRef = "DH" + donHang.getId();
+
+        // 4. Build the QR Code URL exactly like the Frontend
+        // Format: REF:DH5|MOVIE:Dune|SEATS:A1,A2
+        String rawQrData = "REF:" + bookingRef + "|MOVIE:" + movieName + "|SEATS:" + joinedSeatNames;
+        String encodedQrData = URLEncoder.encode(rawQrData, StandardCharsets.UTF_8);
+        String qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + encodedQrData + "&color=000000&bgcolor=ffffff";
+
+        // 5. Populate the Email Request
+        EmailTicketRequest emailReq = new EmailTicketRequest();
+        emailReq.setTo_email(request.getEmail());
+        emailReq.setCustomer_phone(request.getPhone());
+        emailReq.setMovie_name(movieName);
+        emailReq.setShowtime(showtime);
+        emailReq.setSeats(joinedSeatNames);
+        
+        // Format price properly
+        emailReq.setTotal_price(donHang.getTongTien() + " ₫");
+        emailReq.setBooking_ref(bookingRef);
+        emailReq.setQr_image_link(qrUrl);
+
+        // 6. Fire the Async Email!
+        emailService.sendTicketEmail(emailReq);
+        
 
         log.info("Successfully created DonHang ID: {} for {} with total: {}", donHang.getId(), request.getEmail(), totalPrice);
         

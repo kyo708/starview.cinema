@@ -13,8 +13,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.starview.cinemabooking.dtos.CheckoutRequest;
+import com.starview.cinemabooking.dtos.EmailTicketRequest;
 import com.starview.cinemabooking.dtos.SeatSessionRequest;
 import com.starview.cinemabooking.model.DonHang;
+import com.starview.cinemabooking.service.EmailService;
 import com.starview.cinemabooking.service.TicketService;
 
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class TicketController {
 	private final TicketService ticketService;
+	private final EmailService emailService;
 
     // Khóa ghế tạm thời để người dùng chọn ghế trong UI (US 2.2, 4.1)
     @PostMapping("/hold")
@@ -100,5 +103,11 @@ public class TicketController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
+    }
+    
+    @PostMapping("/email/ticket")
+    public ResponseEntity<String> sendEmail(@RequestBody EmailTicketRequest request) {
+        emailService.sendTicketEmail(request);
+        return ResponseEntity.ok("Email đang được gửi đi!");
     }
 }

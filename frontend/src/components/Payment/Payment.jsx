@@ -17,7 +17,7 @@ function Payment() {
     formattedDate, 
     showtime, 
     selectedSeats, // render UI
-    selectedSeatsIds, // gửi cho backend
+    selectedSeatIds, // gửi cho backend
     totalPrice,
     sessionId, // Nhận sessionId từ SeatSelection
     currentCountdown, // Nhận countdown từ SeatSelection
@@ -41,17 +41,56 @@ function Payment() {
 
   // useEffect để quản lý bộ đếm ngược trên trang Payment
   useEffect(() => {
+    const handleTimeout = async () => {
+      alert("Thời gian giữ ghế đã hết. Vui lòng chọn lại ghế.");
+      
+      // Xóa các ghế đã chọn và countdown khỏi sessionStorage khi hết giờ
+      sessionStorage.removeItem('STARVIEW_CART');
+      sessionStorage.removeItem('STARVIEW_COUNTDOWN');
+
+      // Ép backend nhả toàn bộ ghế dựa vào danh sách ID ghế đã lưu ở bước trước
+      if (selectedSeatIds && selectedSeatIds.length > 0 && sessionId) {
+        const releasePromises = selectedSeatIds.map(seatId =>
+          fetch(`${baseUrl}/api/v1/bookings/release`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ seatId: seatId, sessionId: sessionId }),
+          })
+        );
+        try {
+          await Promise.allSettled(releasePromises);
+          console.log("Đã yêu cầu backend nhả ghế do hết giờ ở màn hình thanh toán.");
+        } catch (e) {
+          console.error("Lỗi khi nhả ghế từ backend:", e);
+        }
+      }
+
+      // Điều hướng về trang chọn ghế, đảm bảo truyền đủ params
+      navigate(`/phim/${movie.id}/seatselection?cinema=${cinemaName}&time=${showtime}&date=${showdate}&suatChieuId=${suatChieuId}`);
+    };
+
     if (paymentCountdown > 0 && paymentCountdownIntervalRef.current === null) {
       paymentCountdownIntervalRef.current = setInterval(() => {
         setPaymentCountdown(prev => {
           if (prev <= 1) {
             clearInterval(paymentCountdownIntervalRef.current);
             paymentCountdownIntervalRef.current = null;
+            // THE FIX: Ép Backend nhả ghế ngay lập tức giống trang SeatSelection
+            if (location.state?.selectedSeatIds) {
+              location.state.selectedSeatIds.forEach(async (seatId) => {
+                try {
+                  await fetch(`${baseUrl}/api/v1/bookings/release`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ seatId: seatId, sessionId: sessionId })
+                  });
+                } catch (e) { console.error(e); }
+              });
+            }
+
             alert("Thời gian giữ ghế đã hết. Vui lòng chọn lại ghế.");
-            // Xóa các ghế đã chọn và countdown khỏi sessionStorage khi hết giờ
             sessionStorage.removeItem('STARVIEW_CART');
             sessionStorage.removeItem('STARVIEW_COUNTDOWN');
-            // Điều hướng về trang chọn ghế, đảm bảo truyền đủ params
             navigate(`/phim/${movie.id}/seatselection?cinema=${cinemaName}&time=${showtime}&date=${showdate}&suatChieuId=${suatChieuId}`);
             return 0;
           }
@@ -66,7 +105,7 @@ function Payment() {
         paymentCountdownIntervalRef.current = null;
       }
     };
-  }, [paymentCountdown, navigate, movie, cinemaName, showtime, showdate, suatChieuId]); // Dependencies cho việc khởi tạo và điều hướng
+  }, [paymentCountdown, navigate, movie, cinemaName, showtime, showdate, suatChieuId, selectedSeatIds, sessionId]); // Dependencies cho việc khởi tạo và điều hướng
 
   // Nếu người dùng vào thẳng link /payment mà không qua chọn ghế -> back về trang chủ
   if (!movie || !selectedSeats) {
@@ -92,7 +131,8 @@ function Payment() {
         },
         body: JSON.stringify({
           // Lưu ý: Đảm bảo SeatSelection.jsx đã truyền 'selectedSeatIds' chứa mảng số nguyên [1, 2] qua location.state!
-          seatIds: location.state.selectedSeatIds, 
+          seatIds: location.state.selectedSeatIds,
+          seatNames: selectedSeats, 
           sessionId: sessionId, // Gửi sessionId lên backend để xác nhận ghế đã được giữ bởi session này
           email: email, 
           phone: phone,
@@ -107,6 +147,14 @@ function Payment() {
       }
 
       const data = await response.json(); // data từ Spring Boot trả về sẽ có dạng: { bookingRef: "DH5", totalPrice: 140000, message: "..." }
+
+      // THE FIX: Dừng bộ đếm thời gian và dọn dẹp giỏ hàng khi thanh toán thành công!
+      if (paymentCountdownIntervalRef.current) {
+        clearInterval(paymentCountdownIntervalRef.current);
+        paymentCountdownIntervalRef.current = null;
+      }
+      sessionStorage.removeItem('STARVIEW_CART');
+      sessionStorage.removeItem('STARVIEW_COUNTDOWN');
 
       // 4. CHUẨN BỊ DỮ LIỆU QR
       const qrData = `REF:${data.bookingRef}|MOVIE:${movie.tenPhim}|SEATS:${selectedSeats.join(',')}`;

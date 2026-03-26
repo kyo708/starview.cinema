@@ -37,6 +37,10 @@ services:
       # THE FIX: Read from the .env file instead of hardcoding!
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
       - JWT_SECRET=${JWT_SECRET}
+      #- SPRING_MAIL_USERNAME=${SPRING_MAIL_USERNAME}
+      #- SPRING_MAIL_PASSWORD=${SPRING_MAIL_PASSWORD}
+      - BREVO_API_KEY=${BREVO_API_KEY}
+      - BREVO_SENDER_EMAIL=${BREVO_SENDER_EMAIL}
 
 volumes:
   db_data: # Keeps your database data safe even if the container stops

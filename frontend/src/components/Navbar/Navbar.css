@@ -105,6 +105,61 @@
 .search-box button:hover {
   color: #ffb400;
 }
+/* --- Search Dropdown Styles --- */
+.search-container {
+  position: relative;
+}
+
+.search-results-dropdown {
+  position: absolute;
+  top: 110%; /* Vị trí ngay dưới ô tìm kiếm */
+  left: 0;
+  width: 300px; /* Tăng chiều rộng để hiển thị tốt hơn */
+  max-height: 400px;
+  overflow-y: hidden;
+  background-color: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  z-index: 1000; /* Đảm bảo dropdown nằm trên các thành phần khác */
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+}
+
+.search-result-item {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.search-result-item:hover {
+  background-color: #333;
+}
+
+.search-result-poster {
+  width: 40px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-right: 12px;
+  flex-shrink: 0; /* Ngăn poster bị co lại */
+}
+
+.search-result-title {
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 500;
+  /* Xử lý nếu tên phim quá dài */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /* Icon Đăng nhập */
 .login-icon {
