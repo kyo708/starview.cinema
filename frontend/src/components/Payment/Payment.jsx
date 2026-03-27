@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import Ticket from '../Ticket/Ticket';
 import '../SeatSelection/SeatSelection.css';
 import './Payment.css';
@@ -34,6 +34,8 @@ function Payment() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showTicket, setShowTicket] = useState(false);
   const [ticketData, setTicketData] = useState(null);
+  const [voucherCode, setVoucherCode] = useState('');
+  const [isVoucherApplied, setIsVoucherApplied] = useState(false);
 
   // State và Ref cho bộ đếm ngược trên trang Payment
   const [paymentCountdown, setPaymentCountdown] = useState(currentCountdown || 0);
@@ -116,6 +118,13 @@ function Payment() {
       </div>
     );
   }
+
+  const handleApplyVoucher = () => {
+    if (!voucherCode.trim()) return;
+    // Tương lai sẽ gọi API ở đây để kiểm tra và tính toán lại giá
+    alert(`Áp dụng mã giảm giá ${voucherCode} thành công! (Demo)`);
+    setIsVoucherApplied(true);
+  };
 
   const handlePayment = async (e) => {
     e.preventDefault();
@@ -204,6 +213,12 @@ function Payment() {
       </div>
 
       <div className="payment-content">
+        {/* THÔNG BÁO ĐĂNG KÝ THÀNH VIÊN */}
+        <div className="member-promo-banner">
+          <span>🌟 Đăng ký tài khoản thành viên để được tích lũy điểm khi mua vé!</span>
+          <Link to="/register" className="promo-link">Đăng ký ngay</Link>
+        </div>
+
         {/* CỘT TRÁI: FORM THANH TOÁN */}
         <div className="payment-form-section">
           <h2>Thanh Toán</h2>
@@ -285,6 +300,19 @@ function Payment() {
                 </p>
               )}
             </div>
+
+          {/* NHẬP MÃ VOUCHER */}
+          <div className="voucher-section">
+            <input 
+              type="text" placeholder="Nhập mã voucher..." 
+              value={voucherCode} onChange={(e) => setVoucherCode(e.target.value)}
+              disabled={isVoucherApplied}
+            />
+            <button type="button" onClick={handleApplyVoucher} disabled={isVoucherApplied || !voucherCode.trim()}>
+              {isVoucherApplied ? 'Đã áp dụng' : 'Áp dụng'}
+            </button>
+          </div>
+
             <div className="total-price">
               <span>Total Price</span>
               <span>{totalPrice?.toLocaleString('vi-VN')} ₫</span>

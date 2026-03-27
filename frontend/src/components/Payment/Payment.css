@@ -40,6 +40,7 @@
   justify-content: space-between;
   gap: 50px;
   align-items: flex-start;
+  flex-wrap: wrap; /* Cho phép các item xuống hàng */
 }
 
 /* --- CỘT TRÁI: FORM --- */
@@ -133,6 +134,153 @@
 .payment-summary-section {
   width: 350px;
   flex-shrink: 0;
+}
+
+.summary-card {
+  background: #1a1a1a;
+  padding: 25px;
+  border-radius: 12px;
+  border: 1px solid #333;
+  display: flex;
+  flex-direction: column;
+}
+
+.summary-card h3 {
+  margin: 0 0 15px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  border-bottom: 1px solid #333;
+  padding-bottom: 10px;
+}
+
+.summary-details {
+  flex-grow: 1;
+}
+
+.summary-details p {
+  margin: 0 0 12px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: #ccc;
+  display: flex;
+  justify-content: space-between;
+}
+.summary-details p span {
+  color: #888;
+  margin-right: 10px;
+}
+
+.summary-details > div { /* Target the seats selected div */
+  margin-bottom: 12px;
+}
+
+.summary-details > div > span { /* Target the "Seats Selected" label */
+  color: #888;
+  display: block;
+  font-size: 0.8rem;
+  margin-bottom: 4px;
+}
+
+.selected-seats-list {
+  background: #0f0f0f;
+  padding: 10px;
+  border-radius: 8px;
+  min-height: 50px;
+  max-height: 120px;
+  overflow-y: auto;
+  margin-top: 5px;
+  border: 1px solid #2a2a2a;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.seat-pill {
+  display: inline-block;
+  background: #ffb400;
+  color: #000;
+  padding: 4px 10px;
+  border-radius: 12px;
+  margin: 0;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.countdown-timer {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #ffb400;
+  text-align: center;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #333;
+}
+
+/* --- BANNER & VOUCHER --- */
+.member-promo-banner {
+  width: 100%;
+  background: #2a2a2a;
+  padding: 15px 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #ffb400;
+}
+
+.member-promo-banner .promo-link {
+  color: #ffb400;
+  font-weight: bold;
+  text-decoration: none;
+  border-bottom: 1px dashed #ffb400;
+  transition: color 0.2s;
+}
+.member-promo-banner .promo-link:hover {
+  color: #ff8c00;
+}
+
+.voucher-section {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  border-top: 1px solid #333;
+  padding-top: 20px;
+}
+
+.voucher-section input {
+  flex: 1;
+  min-width: 0; /* THE FIREFOX FIX: Allows the input to shrink */
+  box-sizing: border-box; /* THE FIREFOX FIX: Keeps padding inside the element */
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #444;
+  background: #222;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  transition: border-color 0.2s;
+}
+.voucher-section input:focus {
+  outline: none;
+  border-color: #ffb400;
+}
+
+.voucher-section button {
+  padding: 0 15px;
+  border-radius: 4px;
+  background: #ffb400;
+  color: #000;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.2s;
+}
+
+.voucher-section button:disabled {
+  background: #555;
+  color: #ccc;
+  cursor: not-allowed;
 }
 
 /* Responsive Layout */
