@@ -20,7 +20,9 @@ import com.starview.cinemabooking.dtos.SeatSessionRequest;
 import com.starview.cinemabooking.model.DonHang;
 import com.starview.cinemabooking.service.EmailService;
 import com.starview.cinemabooking.service.TicketService;
+import com.starview.cinemabooking.service.VNPayService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -30,6 +32,7 @@ import lombok.RequiredArgsConstructor;
 public class TicketController {
 	private final TicketService ticketService;
 	private final EmailService emailService;
+	private final VNPayService vnPayService;
 
     // Khóa ghế tạm thời để người dùng chọn ghế trong UI (US 2.2, 4.1)
     @PostMapping("/hold")
@@ -75,23 +78,34 @@ public class TicketController {
     }
     
     // Endpoint cho US #8 & #9: Xử lý thanh toán và tạo đơn hàng
+    // NEW: Xử lý thanh toán qua VNPay
     @PostMapping("/checkout")
-    public ResponseEntity<?> processCheckout(@RequestBody CheckoutRequest request) {
+    public ResponseEntity<?> processCheckout(@RequestBody CheckoutRequest request, HttpServletRequest httpRequest) {
         try {
         	// 1. THE SAFEGUARD: Ngăn chặn lỗi "Ids must not be null"
             if (request.getSeatIds() == null || request.getSeatIds().isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body("Vui lòng chọn ít nhất một ghế trước khi thanh toán.");
             }
-            
-            // Gọi Service để tính tiền và tạo đơn hàng với trạng thái PENDING
+            // 2. Tạo đơn hàng PENDING (Ghế vẫn giữ trạng thái DANG_CHO)
             DonHang donHang = ticketService.createPendingOrder(request);
             
-            // Trả về bookingRef (chính là ID của DonHang) cho màn hình Ticket.jsx
+            // 3. Chuẩn bị dữ liệu cho VNPay
+            long amount = Math.round(donHang.getTongTien()); 
+            String orderInfo = "Thanh toan ve phim. Ma don hang DH" + donHang.getId();
+            String orderId = String.valueOf(donHang.getId());
+
+            // THE FIX: Fetch the exact expiration time for this specific order
+            LocalDateTime expireDate = ticketService.getSeatExpirationForOrder(donHang.getId());
+
+            // 4. Gọi Service sinh URL bảo mật (Now passing expireDate!)
+            String paymentUrl = vnPayService.createPaymentUrl(amount, orderInfo, orderId, expireDate, httpRequest);
+            
+            // 5. Trả URL về cho React frontend để thực hiện redirect (window.location.href)
             return ResponseEntity.ok(Map.of(
-                "message", "Đã tạo đơn hàng chờ thanh toán",
-                "bookingRef", "DH" + donHang.getId(),
-                "totalPrice", donHang.getTongTien()
+                "message", "Đang chuyển hướng đến cổng thanh toán VNPay...",
+                "paymentUrl", paymentUrl,
+                "bookingRef", "DH" + donHang.getId()
             ));
             
         } catch (IllegalStateException e) {
@@ -99,6 +113,9 @@ public class TicketController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            // Lỗi hệ thống mã hóa hash của VNPay
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi hệ thống khi tạo URL thanh toán.");
         }
     }
     
