@@ -51,6 +51,7 @@ public class SecurityConfig {
                         .requestMatchers("/suat-chieu/**").permitAll()
                         .requestMatchers("/suat-chieu/*/ghe").permitAll() // Cho phép lấy danh sách ghế của suất chiếu
                         .requestMatchers("/suat-chieu/phim/**").permitAll()
+                        .requestMatchers("/payments/**").permitAll()
                         .requestMatchers("/error/**").permitAll()
                         // Staff endpoints require STAFF role
                         // Đưa quy tắc cụ thể lên trước: API staff bắt buộc phải có quyền STAFF

@@ -3,7 +3,9 @@ package com.starview.cinemabooking.service;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Objects;
 
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -40,9 +42,9 @@ public class TicketService {
 		GheSuatChieu ghe = gheSuatChieuRepository.findById(seatId)
                 .orElseThrow(() -> new IllegalArgumentException("Ghế không tồn tại"));
 		
-		if (!ghe.getTrangThai().equals("TRONG")) {
+		if (!"TRONG".equals(ghe.getTrangThai())) {
             // Idempotency: Nếu chính user này đã khóa ghế này rồi, thì bỏ qua không ném lỗi
-            if (ghe.getTrangThai().equals("DANG_CHO") && ghe.getPhienGiaoDich().equals(sessionId)) {
+            if ("DANG_CHO".equals(ghe.getTrangThai()) && Objects.equals(sessionId, ghe.getPhienGiaoDich())) {
                 return; 
             }
             throw new IllegalStateException("Ghế này đã được người khác đặt. Vui lòng chọn ghế khác!");
@@ -66,7 +68,7 @@ public class TicketService {
                 .orElseThrow(() -> new IllegalArgumentException("Ghế không tồn tại"));
 
         // Chỉ cho phép mở khóa nếu ghế đang chờ VÀ thuộc về chính session này
-        if (ghe.getTrangThai().equals("DANG_CHO") && ghe.getPhienGiaoDich().equals(sessionId)) {
+        if ("DANG_CHO".equals(ghe.getTrangThai()) && Objects.equals(sessionId, ghe.getPhienGiaoDich())) {
             ghe.setTrangThai("TRONG");
             ghe.setPhienGiaoDich(null);
             ghe.setThoiGianHetHanGiuCho(null);
@@ -107,7 +109,7 @@ public class TicketService {
 
         // 2. Kiểm tra ghế có phải đang ở trạng thái "Đang chờ" VÀ thuộc session này không
         for (GheSuatChieu ghe : seats) {
-            if (!ghe.getTrangThai().equals("DANG_CHO") || !ghe.getPhienGiaoDich().equals(request.getSessionId())) {
+            if (!"DANG_CHO".equals(ghe.getTrangThai()) || !Objects.equals(request.getSessionId(), ghe.getPhienGiaoDich())) {
                 throw new IllegalStateException("Ghế " + ghe.getId() + " đã hết thời gian giữ chỗ hoặc đã bị mua. Trạng thái hiện tại: " + ghe.getTrangThai());
             }
         }
@@ -143,7 +145,10 @@ public class TicketService {
         // 6. Gửi email
         // 1. Extract basic details
         String movieName = seats.get(0).getSuatChieu().getPhim().getTenPhim();
-        String showtime = seats.get(0).getSuatChieu().getThoiGianChieu().toString();
+
+        // FIX: Format the Date nicely (e.g., "19:30 - 26/03/2026")
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm - dd/MM/yyyy");
+        String showtime = seats.get(0).getSuatChieu().getThoiGianChieu().format(formatter);
         
         // 2. Format the Seat Names (e.g., "A1, A2")
         String joinedSeatNames = String.join(", ", request.getSeatNames());
@@ -156,6 +161,9 @@ public class TicketService {
         String rawQrData = "REF:" + bookingRef + "|MOVIE:" + movieName + "|SEATS:" + joinedSeatNames;
         String encodedQrData = URLEncoder.encode(rawQrData, StandardCharsets.UTF_8);
         String qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + encodedQrData + "&color=000000&bgcolor=ffffff";
+        
+        // FIX: Format Price to remove the trailing ".0" and add commas
+        String formattedPrice = String.format("%,.0f", donHang.getTongTien());
 
         // 5. Populate the Email Request
         EmailTicketRequest emailReq = new EmailTicketRequest();
@@ -166,7 +174,7 @@ public class TicketService {
         emailReq.setSeats(joinedSeatNames);
         
         // Format price properly
-        emailReq.setTotal_price(donHang.getTongTien() + " ₫");
+        emailReq.setTotal_price(formattedPrice + " ₫");
         emailReq.setBooking_ref(bookingRef);
         emailReq.setQr_image_link(qrUrl);
 
@@ -179,4 +187,120 @@ public class TicketService {
         return donHang;
 	}
 	
+	@Transactional
+    public DonHang createPendingOrder(CheckoutRequest request) {
+        if (request.getSeatIds() == null || request.getSeatIds().isEmpty()) {
+            throw new IllegalArgumentException("Vui lòng chọn ít nhất một ghế.");
+        }
+
+        List<GheSuatChieu> seats = gheSuatChieuRepository.findAllById(request.getSeatIds());
+        if (seats.size() != request.getSeatIds().size()) {
+            throw new IllegalArgumentException("Một số ghế không tồn tại.");
+        }
+
+        for (GheSuatChieu ghe : seats) {
+            if (!"DANG_CHO".equals(ghe.getTrangThai()) || !Objects.equals(request.getSessionId(), ghe.getPhienGiaoDich())) {
+                throw new IllegalStateException("Ghế " + ghe.getId() + " đã bị mất quyền giữ chỗ.");
+            }
+        }
+
+        float totalPrice = 0.0f;
+        for (GheSuatChieu ghe : seats) {
+            totalPrice += ghe.calculatePrice();
+        }
+
+        DonHang donHang = new DonHang();
+        donHang.setEmailKhachHang(request.getEmail());
+        donHang.setSdtKhachHang(request.getPhone());
+        donHang.setTongTien(totalPrice);
+        
+        // CRITICAL CHANGE: Status is now PENDING
+        donHang.setTrangThaiThanhToan("PENDING"); 
+        donHang.setThoiGianTao(LocalDateTime.now());
+        // Save the seat names to the database!
+        donHang.setDanhSachGhe(String.join(", ", request.getSeatNames()));
+        
+        donHang = donHangRepository.save(donHang);
+
+        for (GheSuatChieu ghe : seats) {
+            // Link the seat to the pending order, but DO NOT change status to DA_BAN yet!
+            ghe.setDonHang(donHang); 
+        }
+        gheSuatChieuRepository.saveAll(seats);
+        
+        log.info("Created PENDING DonHang ID: {}", donHang.getId());
+        return donHang;
+    }
+	
+	@Transactional
+    public void finalizeOrderSuccess(Integer orderId) {
+        DonHang donHang = donHangRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng"));
+
+        // Protect against duplicate webhook calls from VNPay
+        if ("SUCCESS".equals(donHang.getTrangThaiThanhToan())) {
+            log.info("Order {} is already SUCCESS. Ignoring webhook.", orderId);
+            return;
+        }
+
+        // 1. Mark Order as Paid
+        donHang.setTrangThaiThanhToan("SUCCESS");
+        donHangRepository.save(donHang);
+
+        // 2. Lock the Seats Officially
+        List<GheSuatChieu> seats = gheSuatChieuRepository.findByDonHang(donHang);
+        for (GheSuatChieu ghe : seats) {
+            ghe.setTrangThai("DA_BAN");    
+            ghe.setPhienGiaoDich(null);
+            ghe.setThoiGianHetHanGiuCho(null);   
+        }
+        gheSuatChieuRepository.saveAll(seats);
+
+        // 3. Fire the Email
+        String movieName = seats.get(0).getSuatChieu().getPhim().getTenPhim();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm - dd/MM/yyyy");
+        String showtime = seats.get(0).getSuatChieu().getThoiGianChieu().format(formatter);
+        
+        String joinedSeatNames = donHang.getDanhSachGhe();
+        String bookingRef = "DH" + donHang.getId();
+
+        String rawQrData = "REF:" + bookingRef + "|MOVIE:" + movieName + "|SEATS:" + joinedSeatNames;
+        String encodedQrData = URLEncoder.encode(rawQrData, StandardCharsets.UTF_8);
+        String qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + encodedQrData + "&color=000000&bgcolor=ffffff";
+
+        String formattedPrice = String.format("%,.0f", donHang.getTongTien());
+
+        EmailTicketRequest emailReq = new EmailTicketRequest();
+        emailReq.setTo_email(donHang.getEmailKhachHang());
+        emailReq.setCustomer_phone(donHang.getSdtKhachHang());
+        emailReq.setMovie_name(movieName);
+        emailReq.setShowtime(showtime);
+        emailReq.setSeats(joinedSeatNames);
+        emailReq.setTotal_price(formattedPrice + " ₫");
+        emailReq.setBooking_ref(bookingRef);
+        emailReq.setQr_image_link(qrUrl);
+
+        emailService.sendTicketEmail(emailReq);
+        log.info("Order {} finalized successfully. Email triggered.", orderId);
+    }
+	
+	@Transactional
+    public void finalizeOrderFailed(Integer orderId) {
+        DonHang donHang = donHangRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng"));
+
+        donHang.setTrangThaiThanhToan("FAILED");
+        donHangRepository.save(donHang);
+
+        // Release the seats back to the public pool
+        List<GheSuatChieu> seats = gheSuatChieuRepository.findByDonHang(donHang);
+        for (GheSuatChieu ghe : seats) {
+            ghe.setTrangThai("TRONG");    
+            ghe.setPhienGiaoDich(null);
+            ghe.setThoiGianHetHanGiuCho(null);
+            ghe.setDonHang(null); // Unlink from the failed order
+        }
+        gheSuatChieuRepository.saveAll(seats);
+        log.warn("Order {} failed/canceled. Seats released.", orderId);
+    }
 }
