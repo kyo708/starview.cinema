@@ -38,12 +38,12 @@ public class TicketController {
     // Khóa ghế tạm thời để người dùng chọn ghế trong UI (US 2.2, 4.1)
     @PostMapping("/hold")
     public ResponseEntity<String> holdGheSuatChieu(@RequestBody SeatSessionRequest request) {
-//		JSON body
-//    	{
-//    		  "seatId": 1
-//			  "sessionId": {UUID}    	
-//    	}
-    	if (request.getSeatId() == null || request.getSessionId() == null || request.getSessionId().isEmpty()) {
+        // JSON body
+        // {
+        // "seatId": 1
+        // "sessionId": {UUID}
+        // }
+        if (request.getSeatId() == null || request.getSessionId() == null || request.getSessionId().isEmpty()) {
             return ResponseEntity.badRequest().body("Dữ liệu không hợp lệ (thiếu seatId hoặc sessionId).");
         }
 
@@ -52,15 +52,16 @@ public class TicketController {
             return ResponseEntity.ok("Ghế đặt mua đã được khóa thành công.");
         } catch (ObjectOptimisticLockingFailureException e) {
             // Catch xung đột @Version
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("Ghế bạn chọn đã được người khác nhanh tay đặt mất. Vui lòng chọn ghế khác!");
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Ghế bạn chọn đã được người khác nhanh tay đặt mất. Vui lòng chọn ghế khác!");
         } catch (IllegalStateException e) {
             // Catch lỗi nghiệp vụ (vd. đặt ghế đã bán rồi)
-        	return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
-    
+
     // US 4.1: Hủy khóa ghế (Khi click bỏ chọn ghế trên UI)
     @PostMapping("/release")
     public ResponseEntity<String> releaseGheSuatChieu(@RequestBody SeatSessionRequest request) {
@@ -77,13 +78,13 @@ public class TicketController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
-    
+
     // Endpoint cho US #8 & #9: Xử lý thanh toán và tạo đơn hàng
     // NEW: Xử lý thanh toán qua VNPay
     @PostMapping("/checkout")
     public ResponseEntity<?> processCheckout(@RequestBody CheckoutRequest request, HttpServletRequest httpRequest) {
         try {
-        	// 1. THE SAFEGUARD: Ngăn chặn lỗi "Ids must not be null"
+            // 1. THE SAFEGUARD: Ngăn chặn lỗi "Ids must not be null"
             if (request.getSeatIds() == null || request.getSeatIds().isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body("Vui lòng chọn ít nhất một ghế trước khi thanh toán.");
@@ -119,7 +120,7 @@ public class TicketController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi hệ thống khi tạo URL thanh toán.");
         }
     }
-    
+
     @PostMapping("/email/ticket")
     public ResponseEntity<String> sendEmail(@RequestBody EmailTicketRequest request) {
         emailService.sendTicketEmail(request);
