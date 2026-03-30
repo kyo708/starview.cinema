@@ -18,7 +18,9 @@ import com.starview.cinemabooking.dtos.SeatSessionRequest;
 import com.starview.cinemabooking.model.DonHang;
 import com.starview.cinemabooking.service.EmailService;
 import com.starview.cinemabooking.service.TicketService;
+import com.starview.cinemabooking.service.VNPayService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -26,8 +28,9 @@ import lombok.RequiredArgsConstructor;
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 public class TicketController {
-    private final TicketService ticketService;
-    private final EmailService emailService;
+	private final TicketService ticketService;
+	private final EmailService emailService;
+	private final VNPayService vnPayService;
 
     // Khóa ghế tạm thời để người dùng chọn ghế trong UI (US 2.2, 4.1)
     @PostMapping("/hold")
@@ -74,35 +77,48 @@ public class TicketController {
     }
 
     // Endpoint cho US #8 & #9: Xử lý thanh toán và tạo đơn hàng
+    // NEW: Xử lý thanh toán qua VNPay
     @PostMapping("/checkout")
-    public ResponseEntity<?> processCheckout(@RequestBody CheckoutRequest request) {
+    public ResponseEntity<?> processCheckout(@RequestBody CheckoutRequest request, HttpServletRequest httpRequest) {
         try {
             // 1. THE SAFEGUARD: Ngăn chặn lỗi "Ids must not be null"
             if (request.getSeatIds() == null || request.getSeatIds().isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body("Vui lòng chọn ít nhất một ghế trước khi thanh toán.");
             }
+        	
+        	// Validate thẻ tín dụng mock (US #9 - AC #36)
+            // Bh VNPay validate
+//            if (request.getCardNumber() == null || !request.getCardNumber().matches("\\d{16}")) {
+//                return ResponseEntity.badRequest().body("Số thẻ tín dụng không hợp lệ.");
+//            }
+            
+            // 2. Tạo đơn hàng PENDING (Ghế vẫn giữ trạng thái DANG_CHO)
+            DonHang donHang = ticketService.createPendingOrder(request);
+            
+            // 3. Chuẩn bị dữ liệu cho VNPay
+            long amount = Math.round(donHang.getTongTien()); // Ép kiểu float/double sang long cho VNPay
+            String orderInfo = "Thanh toan ve phim. Ma don hang DH" + donHang.getId();
+            String orderId = String.valueOf(donHang.getId());
 
-            // Validate thẻ tín dụng mock (US #9 - AC #36)
-            if (request.getCardNumber() == null || !request.getCardNumber().matches("\\d{16}")) {
-                return ResponseEntity.badRequest().body("Số thẻ tín dụng không hợp lệ.");
-            }
-
-            // Gọi Service để tính tiền và lưu database
-            DonHang donHang = ticketService.processPaymentAndSaveOrder(request);
-
-            // Trả về bookingRef (chính là ID của DonHang) cho màn hình Ticket.jsx
+            // 4. Gọi Service sinh URL bảo mật
+            String paymentUrl = vnPayService.createPaymentUrl(amount, orderInfo, orderId, httpRequest);
+            
+            // 5. Trả URL về cho React frontend để thực hiện redirect (window.location.href)
             return ResponseEntity.ok(Map.of(
-                    "message", "Thanh toán thành công",
-                    "bookingRef", "DH" + donHang.getId(),
-                    "totalPrice", donHang.getTongTien(),
-                    "originalPrice", donHang.getTongTienGoc()));
-
+                "message", "Đang chuyển hướng đến cổng thanh toán VNPay...",
+                "paymentUrl", paymentUrl,
+                "bookingRef", "DH" + donHang.getId()
+            ));
+            
         } catch (IllegalStateException e) {
             // Catches if seats expired while they were typing their credit card
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            // Lỗi hệ thống mã hóa hash của VNPay
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi hệ thống khi tạo URL thanh toán.");
         }
     }
 

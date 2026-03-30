@@ -45,6 +45,9 @@ public class DonHang {
 
     @Column(name = "thoi_gian_tao", nullable = false)
     private LocalDateTime thoiGianTao;
+    
+    @Column(name = "danh_sach_ghe")
+    private String danhSachGhe; // A1, A2...
 
     // Relationship: DON_HANG ||--o{ GHE_SUAT_CHIEU : "chứa"
     @OneToMany(mappedBy = "donHang", fetch = FetchType.LAZY)
