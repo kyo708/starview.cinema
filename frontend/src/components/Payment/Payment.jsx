@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { useLocation, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import Ticket from '../Ticket/Ticket';
 import '../SeatSelection/SeatSelection.css';
 import './Payment.css';
@@ -28,21 +28,67 @@ function Payment() {
   // State cho Form thông tin khách hàng và thẻ tín dụng
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [cardNumber, setCardNumber] = useState('');
-  const [expiry, setExpiry] = useState('');
-  const [cvv, setCvv] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showTicket, setShowTicket] = useState(false);
   const [ticketData, setTicketData] = useState(null);
   const [voucherCode, setVoucherCode] = useState('');
   const [isVoucherApplied, setIsVoucherApplied] = useState(false);
+  const [paymentMessage, setPaymentMessage] = useState(null); // Thay thế cho hộp thoại alert()
+
+  // Hook đọc tham số URL để bắt sự kiện VNPay trả về
+  const [searchParams] = useSearchParams();
+  const isVerifyingVNPay = searchParams.has('vnp_ResponseCode');
+  const hasVerifiedVNPay = useRef(false); // Ngăn chặn lỗi React Strict Mode gọi API 2 lần
 
   // State và Ref cho bộ đếm ngược trên trang Payment
   const [paymentCountdown, setPaymentCountdown] = useState(currentCountdown || 0);
   const paymentCountdownIntervalRef = useRef(null);
 
+  // useEffect 1: XỬ LÝ KHI VNPAY REDIRECT TRỞ LẠI FRONTEND
+  useEffect(() => {
+    if (isVerifyingVNPay && !hasVerifiedVNPay.current) {
+      hasVerifiedVNPay.current = true; // Đánh dấu đã xác thực để lần render sau không gọi lại
+      setIsProcessing(true);
+      
+      // Gọi Backend để xác thực chữ ký VNPay
+      fetch(`${baseUrl}/api/v1/payments/vnpay-return?${searchParams.toString()}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === 'success') {
+            // Xóa giỏ hàng và đếm ngược
+            sessionStorage.removeItem('STARVIEW_CART');
+            sessionStorage.removeItem('STARVIEW_COUNTDOWN');
+
+            // Phục hồi lại data vé từ sessionStorage (do khi redirect sang VNPay React bị mất state)
+            const savedTicketData = sessionStorage.getItem('TEMP_TICKET_DATA');
+            if (savedTicketData) {
+              setTicketData(JSON.parse(savedTicketData));
+              setShowTicket(true);
+              sessionStorage.removeItem('TEMP_TICKET_DATA');
+            } else {
+              // Thay thế alert() bằng giao diện UI mượt mà
+              setPaymentMessage({ isError: false, text: "Thanh toán thành công! Vui lòng kiểm tra email để nhận vé điện tử." });
+            }
+          } else {
+            setPaymentMessage({ isError: true, text: "Giao dịch VNPay thất bại hoặc đã bị hủy bởi người dùng." });
+            sessionStorage.removeItem('TEMP_TICKET_DATA');
+          }
+        })
+        .catch(err => {
+          console.error("Lỗi xác minh VNPay:", err);
+          setPaymentMessage({ isError: true, text: "Đã xảy ra lỗi khi kết nối tới máy chủ để xác minh." });
+        })
+        .finally(() => {
+          setIsProcessing(false);
+        });
+    }
+  }, [searchParams, isVerifyingVNPay]);
+
   // useEffect để quản lý bộ đếm ngược trên trang Payment
   useEffect(() => {
+    // Bỏ qua đếm ngược nếu đang trong trạng thái xác thực màn hình VNPay trả về
+    if (isVerifyingVNPay) return;
+
     const handleTimeout = async () => {
       alert("Thời gian giữ ghế đã hết. Vui lòng chọn lại ghế.");
       
@@ -107,14 +153,56 @@ function Payment() {
         paymentCountdownIntervalRef.current = null;
       }
     };
-  }, [paymentCountdown, navigate, movie, cinemaName, showtime, showdate, suatChieuId, selectedSeatIds, sessionId]); // Dependencies cho việc khởi tạo và điều hướng
+  }, [paymentCountdown, navigate, movie, cinemaName, showtime, showdate, suatChieuId, selectedSeatIds, sessionId, isVerifyingVNPay]);
 
-  // Nếu người dùng vào thẳng link /payment mà không qua chọn ghế -> back về trang chủ
+  // 1. ƯU TIÊN SỐ 1: NẾU ĐÃ THANH TOÁN THÀNH CÔNG -> HIỂN THỊ POPUP VÉ
+  // (Đặt trên cùng để bypass mọi màn hình loading và tránh crash do mất state)
+  if (showTicket && ticketData) {
+    return (
+      <div className="payment-container">
+        <Ticket 
+          ticketData={ticketData} 
+          onClose={() => navigate('/')} 
+        />
+      </div>
+    );
+  }
+
+  // 2. THÔNG BÁO UI (THAY THẾ CHO ALERT BLOCK TRÌNH DUYỆT)
+  if (paymentMessage) {
+    return (
+      <div className="payment-container">
+        <div className="payment-status-page">
+          <h2 style={{ color: paymentMessage.isError ? '#f44336' : '#4caf50' }}>
+            {paymentMessage.isError ? 'Thanh toán không thành công' : 'Hoàn tất giao dịch'}
+          </h2>
+          <p style={{ color: '#ccc', fontSize: '1.1rem', marginBottom: '30px' }}>{paymentMessage.text}</p>
+          <button className="btn-pay" onClick={() => navigate('/')}>Về trang chủ</button>
+        </div>
+      </div>
+    );
+  }
+
+  // Màn hình chờ khi đang xác thực VNPay
+  if (isVerifyingVNPay) {
+    return (
+      <div className="payment-container">
+        <div className="payment-status-page">
+          <h2>Đang xác thực thanh toán VNPay...</h2>
+          <div className="loading-spinner"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Chặn người dùng vào thẳng link /payment khi không có data
   if (!movie || !selectedSeats) {
     return (
-      <div className="payment-container" style={{ textAlign: 'center', padding: '100px' }}>
-        <h2>Không tìm thấy thông tin đơn hàng</h2>
-        <button className="btn-pay" style={{width: '200px'}} onClick={() => navigate('/')}>Về trang chủ</button>
+      <div className="payment-container">
+        <div className="payment-status-page">
+          <h2>Không tìm thấy thông tin đơn hàng</h2>
+          <button className="btn-pay" onClick={() => navigate('/')}>Về trang chủ</button>
+        </div>
       </div>
     );
   }
@@ -131,59 +219,36 @@ function Payment() {
     setIsProcessing(true);
     
     try {
-      // 1. GỌI API BACKEND
+      // 1. TẠO ĐƠN HÀNG CHỜ THANH TOÁN (PENDING)
       const response = await fetch(`${baseUrl}/api/v1/bookings/checkout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
-          // Không có Authorization vì Khách không cần tài khoản
         },
         body: JSON.stringify({
-          // Lưu ý: Đảm bảo SeatSelection.jsx đã truyền 'selectedSeatIds' chứa mảng số nguyên [1, 2] qua location.state!
           seatIds: location.state.selectedSeatIds,
           seatNames: selectedSeats, 
-          sessionId: sessionId, // Gửi sessionId lên backend để xác nhận ghế đã được giữ bởi session này
+          sessionId: sessionId, 
           email: email, 
-          phone: phone,
-          cardNumber: cardNumber 
+          phone: phone
         })
       });
 
-      // 2. XỬ LÝ LỖI (Ví dụ: Thẻ sai định dạng, ghế đã bị cướp mất, v.v.)
       if (!response.ok) {
         const errorMsg = await response.text();
-        throw new Error(errorMsg || "Giao dịch thất bại. Vui lòng thử lại!");
+        throw new Error(errorMsg || "Khởi tạo đơn hàng thất bại. Vui lòng thử lại!");
       }
 
-      const data = await response.json(); // data từ Spring Boot trả về sẽ có dạng: { bookingRef: "DH5", totalPrice: 140000, message: "..." }
+      const data = await response.json(); // Nhận về: { bookingRef: "DH5", totalPrice: 140000 }
 
-      // THE FIX: Dừng bộ đếm thời gian và dọn dẹp giỏ hàng khi thanh toán thành công!
+      // Tạm ngưng bộ đếm trong lúc nhảy qua VNPay
       if (paymentCountdownIntervalRef.current) {
         clearInterval(paymentCountdownIntervalRef.current);
         paymentCountdownIntervalRef.current = null;
       }
-      sessionStorage.removeItem('STARVIEW_CART');
-      sessionStorage.removeItem('STARVIEW_COUNTDOWN');
 
-      // 4. CHUẨN BỊ DỮ LIỆU QR
-      const qrData = `REF:${data.bookingRef}|MOVIE:${movie.tenPhim}|SEATS:${selectedSeats.join(',')}`;
-      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData)}&color=000000&bgcolor=ffffff`;
-      
-      // 5. Gom dữ liệu vé
-      const emailPayload = {
-        to_email: email,
-        customer_phone: phone,
-        movie_name: movie.tenPhim,
-        showtime: `${showtime} - ${formattedDate}`,
-        seats: selectedSeats.join(', '),
-        total_price: `$${data.totalPrice} ₫`, // Lấy giá CHUẨN từ Backend (US #8)
-        booking_ref: data.bookingRef, // Lấy mã Đơn hàng từ DB
-        qr_image_link: qrUrl // Có thể nhúng trực tiếp link này vào thẻ <img> trong template email
-      };
-      console.log("Sẵn sàng gửi email vé tới:", email, emailPayload);
-      
-      //ta lưu dữ liệu và bật Popup
-      setTicketData({
+      // 2. LƯU DỮ LIỆU VÉ TẠM THỜI VÀO SESSION STORAGE (ĐỂ PHỤC HỒI SAU KHI VNPAY REDIRECT VỀ)
+      const tempTicketData = {
         movie, 
         cinemaName, 
         formattedDate, 
@@ -192,8 +257,17 @@ function Payment() {
         totalPrice: data.totalPrice, 
         bookingRef: data.bookingRef, 
         customerInfo: { email, phone }
-      });
-      setShowTicket(true);
+      };
+      sessionStorage.setItem('TEMP_TICKET_DATA', JSON.stringify(tempTicketData));
+
+      // 3. GỌI API LẤY URL VNPAY VÀ REDIRECT
+      const orderIdStr = data.bookingRef.replace('DH', ''); // Trích xuất ID nguyên thủy từ "DH5" -> "5"
+      const vnpayRes = await fetch(`${baseUrl}/api/v1/payments/create-url?amount=${data.totalPrice}&orderInfo=ThanhToanVeGSC_${orderIdStr}&orderId=${orderIdStr}`);
+      if (!vnpayRes.ok) throw new Error("Không thể khởi tạo cổng thanh toán VNPay.");
+      
+      const vnpayData = await vnpayRes.json();
+      window.location.href = vnpayData.paymentUrl; // Bắn người dùng qua VNPay
+
     } catch (error){
       console.error("Lỗi thanh toán: ", error);
       alert(error.message); // Hiển thị lỗi từ backend lên màn hình (US #9 - AC #37)
@@ -222,10 +296,10 @@ function Payment() {
         {/* CỘT TRÁI: FORM THANH TOÁN */}
         <div className="payment-form-section">
           <h2>Thanh Toán</h2>
-          <p className="payment-subtitle">Nhập thông tin thẻ tín dụng để hoàn tất đặt vé</p>
+          <p className="payment-subtitle">Vui lòng cung cấp thông tin liên hệ nhận vé</p>
           
           <form className="payment-form" onSubmit={handlePayment}>
-            <h4 style={{ color: '#fff', fontSize: '1.2rem', marginBottom: '15px', marginTop: '0' }}>1. Thông tin liên hệ</h4>
+            <h4 className="form-section-title">1. Thông tin liên hệ</h4>
             <div className="form-group">
               <label>Email nhận vé</label>
               <input 
@@ -241,40 +315,9 @@ function Payment() {
               />
             </div>
 
-            <h4 style={{ color: '#fff', fontSize: '1.2rem', marginBottom: '15px', marginTop: '30px' }}>2. Thông tin thẻ</h4>
-            <div className="form-group">
-              <label>Số thẻ tín dụng</label>
-              <input 
-                type="text" placeholder="0000 0000 0000 0000" maxLength="16" required 
-                value={cardNumber} onChange={(e) => setCardNumber(e.target.value.replace(/\D/g, ''))}
-              />
-            </div>
-            
-            <div className="form-row">
-              <div className="form-group">
-                <label>Ngày hết hạn (MM/YY)</label>
-                <input 
-                  type="text" placeholder="MM/YY" maxLength="5" required 
-                  value={expiry}
-                  onChange={(e) => {
-                    let val = e.target.value.replace(/\D/g, '');
-                    if (val.length >= 3) val = val.slice(0, 2) + '/' + val.slice(2);
-                    setExpiry(val);
-                  }}
-                />
-              </div>
-              <div className="form-group">
-                <label>Mã bảo mật (CVV)</label>
-                <input 
-                  type="password" placeholder="123" maxLength="3" required 
-                  value={cvv} onChange={(e) => setCvv(e.target.value.replace(/\D/g, ''))}
-                />
-              </div>
-            </div>
-
-            {/* Nút thanh toán sẽ disable nếu chưa nhập đủ chuẩn form hoặc đang quay loading */}
-            <button type="submit" className="btn-pay" disabled={isProcessing || !email || phone.length < 10 || cardNumber.length < 16 || expiry.length < 5 || cvv.length < 3}>
-              {isProcessing ? 'Đang xử lý giao dịch...' : `Thanh toán ${totalPrice?.toLocaleString('vi-VN')} ₫`}
+            {/* Nút thanh toán sẽ disable nếu chưa nhập đủ chuẩn form */}
+            <button type="submit" className="btn-pay" disabled={isProcessing || !email || phone.length < 10}>
+              {isProcessing ? 'Đang kết nối VNPay...' : `Thanh toán VNPay (${totalPrice?.toLocaleString('vi-VN')} ₫)`}
             </button>
           </form>
         </div>
@@ -320,14 +363,6 @@ function Payment() {
           </div>
         </div>
       </div>
-
-      {/* Hiển thị Ticket dưới dạng Popup khi showTicket là true */}
-      {showTicket && (
-        <Ticket 
-          ticketData={ticketData} 
-          onClose={() => navigate('/')} 
-        />
-      )}
     </div>
   );
 }

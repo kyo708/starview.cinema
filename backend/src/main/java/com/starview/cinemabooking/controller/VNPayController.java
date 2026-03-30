@@ -1,5 +1,6 @@
 package com.starview.cinemabooking.controller;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,8 +30,12 @@ public class VNPayController {
             @RequestParam String orderId,
             HttpServletRequest request) {
 
+        // Lấy thời gian hết hạn giữ ghế từ đơn hàng
+        Integer donHangId = Integer.parseInt(orderId);
+        LocalDateTime expireDate = ticketService.getSeatExpirationForOrder(donHangId);
+
         // 1. Ask the service to do the heavy lifting
-        String paymentUrl = vnPayService.createPaymentUrl(amount, orderInfo, orderId, request);
+        String paymentUrl = vnPayService.createPaymentUrl(amount, orderInfo, orderId, expireDate, request);
 
         // 2. Return the JSON response
         Map<String, String> response = new HashMap<>();
@@ -49,9 +54,11 @@ public class VNPayController {
         }
 
         // 2. Extract Data
-        String orderIdStr = queryParams.get("vnp_TxnRef");
+        String vnp_TxnRef = queryParams.get("vnp_TxnRef");
+        // Tách chuỗi để lấy ra ID đơn hàng gốc (Vì lúc gửi đi ta đã cộng thêm _timestamp)
+        String originalOrderId = vnp_TxnRef.split("_")[0];
         String responseCode = queryParams.get("vnp_ResponseCode");
-        Integer orderId = Integer.parseInt(orderIdStr);
+        Integer orderId = Integer.parseInt(originalOrderId);
 
         // 3. Process the Result
         if ("00".equals(responseCode)) {
@@ -60,14 +67,14 @@ public class VNPayController {
             return ResponseEntity.ok(Map.of(
                     "status", "success", 
                     "message", "Thanh toán thành công", 
-                    "orderId", orderIdStr));
+                    "orderId", originalOrderId));
         } else {
             ticketService.finalizeOrderFailed(orderId);
             
             return ResponseEntity.badRequest().body(Map.of(
                     "status", "failed", 
                     "message", "Thanh toán thất bại hoặc bị hủy", 
-                    "orderId", orderIdStr));
+                    "orderId", originalOrderId));
         }
     }
 }

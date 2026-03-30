@@ -290,3 +290,50 @@
     width: 100%;
   }
 }
+
+/* --- STATUS, LOADING & QR CODE SCREENS --- */
+
+/* Layout chung cho các trang trạng thái (loading, error, etc.) */
+.payment-status-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 100px 20px;
+  flex-grow: 1; /* Giúp layout chiếm hết chiều cao còn lại */
+}
+
+.payment-status-page h2 {
+  color: #fff;
+  margin-bottom: 30px;
+}
+
+.payment-status-page .btn-pay {
+  width: 250px; /* Cố định chiều rộng cho đẹp */
+}
+
+/* Hiệu ứng Loading Spinner chuyên nghiệp */
+.loading-spinner {
+  display: inline-block;
+  width: 50px;
+  height: 50px;
+  border: 5px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  border-top-color: #ffb400;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Tiêu đề các mục trong Form */
+.form-section-title {
+  color: #fff;
+  font-size: 1.2rem;
+  margin-bottom: 15px;
+  margin-top: 0;
+}
