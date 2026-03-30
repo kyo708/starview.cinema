@@ -217,11 +217,18 @@ public class TicketService {
         for (GheSuatChieu ghe : seats) {
             totalPrice += ghe.calculatePrice();
         }
+        
+        // 2. THE FIX: Áp dụng voucher ở đây!
+        VoucherApplyResult voucherResult = khuyenMaiService.applyVoucher(request.getVoucherCode(), totalPrice);
 
         DonHang donHang = new DonHang();
         donHang.setEmailKhachHang(request.getEmail());
         donHang.setSdtKhachHang(request.getPhone());
-        donHang.setTongTien(totalPrice);
+
+        // Lưu giá gốc, giá sau giảm và mã voucher đã dùng
+        donHang.setTongTienGoc(voucherResult.getOriginalPrice());
+        donHang.setTongTien(voucherResult.getDiscountedPrice());
+        donHang.setKhuyenMai(voucherResult.getKhuyenMai());
         
         // CRITICAL CHANGE: Status is now PENDING
         donHang.setTrangThaiThanhToan("PENDING"); 
