@@ -239,7 +239,7 @@ function Payment() {
         throw new Error(errorMsg || "Khởi tạo đơn hàng thất bại. Vui lòng thử lại!");
       }
 
-      const data = await response.json(); // Nhận về: { bookingRef: "DH5", totalPrice: 140000 }
+      const data = await response.json(); //{ message: "...", paymentUrl: "https://...", bookingRef: "DH5" }
 
       // Tạm ngưng bộ đếm trong lúc nhảy qua VNPay
       if (paymentCountdownIntervalRef.current) {
@@ -254,19 +254,18 @@ function Payment() {
         formattedDate, 
         showtime, 
         selectedSeats, // Vẫn truyền label A1, A2... để hiển thị trên vé
-        totalPrice: data.totalPrice, 
+        totalPrice: totalPrice, // Lấy thẳng từ React State, không cần backend trả về nữa
         bookingRef: data.bookingRef, 
         customerInfo: { email, phone }
       };
       sessionStorage.setItem('TEMP_TICKET_DATA', JSON.stringify(tempTicketData));
 
-      // 3. GỌI API LẤY URL VNPAY VÀ REDIRECT
-      const orderIdStr = data.bookingRef.replace('DH', ''); // Trích xuất ID nguyên thủy từ "DH5" -> "5"
-      const vnpayRes = await fetch(`${baseUrl}/api/v1/payments/create-url?amount=${data.totalPrice}&orderInfo=ThanhToanVeGSC_${orderIdStr}&orderId=${orderIdStr}`);
-      if (!vnpayRes.ok) throw new Error("Không thể khởi tạo cổng thanh toán VNPay.");
-      
-      const vnpayData = await vnpayRes.json();
-      window.location.href = vnpayData.paymentUrl; // Bắn người dùng qua VNPay
+      // 3. REDIRECT THẲNG SANG VNPAY
+      if (data.paymentUrl) {
+        window.location.href = data.paymentUrl; 
+      } else {
+        throw new Error("Không nhận được URL thanh toán từ hệ thống.");
+      }
 
     } catch (error){
       console.error("Lỗi thanh toán: ", error);
