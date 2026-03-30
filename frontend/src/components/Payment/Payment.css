@@ -250,6 +250,8 @@
 
 .voucher-section input {
   flex: 1;
+  min-width: 0; /* THE FIREFOX FIX: Allows the input to shrink */
+  box-sizing: border-box; /* THE FIREFOX FIX: Keeps padding inside the element */
   padding: 10px;
   border-radius: 4px;
   border: 1px solid #444;
