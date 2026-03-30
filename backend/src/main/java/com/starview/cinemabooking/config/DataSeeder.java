@@ -14,11 +14,13 @@ import com.starview.cinemabooking.model.Phim;
 import com.starview.cinemabooking.model.PhongChieu;
 import com.starview.cinemabooking.model.SuatChieu;
 import com.starview.cinemabooking.model.GheSuatChieu;
+import com.starview.cinemabooking.model.KhuyenMai;
 import com.starview.cinemabooking.model.NguoiDung;
 import com.starview.cinemabooking.repository.PhimRepository;
 import com.starview.cinemabooking.repository.PhongChieuRepository;
 import com.starview.cinemabooking.repository.SuatChieuRepository;
 import com.starview.cinemabooking.repository.GheSuatChieuRepository;
+import com.starview.cinemabooking.repository.KhuyenMaiRepository;
 import com.starview.cinemabooking.repository.NguoiDungRepository;
 
 @Configuration
@@ -30,6 +32,7 @@ public class DataSeeder {
             PhongChieuRepository phongChieuRepository,
             SuatChieuRepository suatChieuRepository,
             GheSuatChieuRepository gheSuatChieuRepository,
+            KhuyenMaiRepository khuyenMaiRepository,
             PasswordEncoder passwordEncoder) {
         return args -> {
             // --- RESET DỮ LIỆU TOÀN BỘ (Theo yêu cầu) ---
@@ -39,6 +42,7 @@ public class DataSeeder {
             suatChieuRepository.deleteAll();
             phongChieuRepository.deleteAll();
             phimRepository.deleteAll();
+            khuyenMaiRepository.deleteAll();
 
             // --- TẠO TÀI KHOẢN STAFF MẪU ---
             // Chỉ tạo nếu chưa có tài khoản nào trong DB
@@ -48,7 +52,7 @@ public class DataSeeder {
                 staffUser.setEmail("staff@starview.com");
                 staffUser.setMatKhau(passwordEncoder.encode("123456"));
                 staffUser.setVaiTro("STAFF");
-                
+
                 NguoiDung adminUser = new NguoiDung();
                 adminUser.setHoTen("Admin Account");
                 adminUser.setEmail("admin@starview.com");
@@ -183,6 +187,32 @@ public class DataSeeder {
                 System.out.println("✅ Mock room data successfully seeded!");
             }
 
+            // --- TẠO MÃ GIẢM GIÁ MẪU ---
+            if (khuyenMaiRepository.count() == 0) {
+                LocalDateTime expiry = LocalDateTime.of(2026, 12, 31, 23, 59, 59);
+
+                KhuyenMai save10 = new KhuyenMai();
+                save10.setMaKhuyenMai("SAVE10");
+                save10.setLoai("PERCENT");
+                save10.setGiaTri(10f);
+                save10.setMaxGiamGia(50000f);
+                save10.setNgayHetHan(expiry);
+                save10.setGioiHanSuDung(1);
+                save10.setDaSuDung(0);
+
+                KhuyenMai flat20000 = new KhuyenMai();
+                flat20000.setMaKhuyenMai("FLAT20000");
+                flat20000.setLoai("FLAT");
+                flat20000.setGiaTri(20000f);
+                flat20000.setMaxGiamGia(null);
+                flat20000.setNgayHetHan(expiry);
+                flat20000.setGioiHanSuDung(1);
+                flat20000.setDaSuDung(0);
+
+                khuyenMaiRepository.saveAll(Arrays.asList(save10, flat20000));
+                System.out.println("✅ Mock voucher data successfully seeded!");
+            }
+
             // --- TẠO SUẤT CHIẾU MẪU ---
             if (suatChieuRepository.count() == 0) {
                 List<Phim> phims = phimRepository.findAll();
@@ -191,25 +221,25 @@ public class DataSeeder {
                 // Đảm bảo đã có Phim và Phòng chiếu thì mới tạo Suất chiếu
                 if (!phims.isEmpty() && !phongs.isEmpty()) {
                     LocalDateTime now = LocalDateTime.now();
-                    
+
                     SuatChieu sc1 = new SuatChieu();
                     sc1.setPhim(phims.get(0)); // Phim: Dune 2
                     sc1.setPhongChieu(phongs.get(0)); // Phòng 1
-                    sc1.setThoiGianChieu(now.withHour(18).withMinute(30).withSecond(0)); 
+                    sc1.setThoiGianChieu(now.withHour(18).withMinute(30).withSecond(0));
                     sc1.setHeSoGia(1.0f);
 
                     SuatChieu sc2 = new SuatChieu();
                     sc2.setPhim(phims.get(0)); // Phim: Dune 2
                     sc2.setPhongChieu(phongs.get(1)); // Phòng 2
-                    sc2.setThoiGianChieu(now.plusDays(1).withHour(20).withMinute(0).withSecond(0)); 
+                    sc2.setThoiGianChieu(now.plusDays(1).withHour(20).withMinute(0).withSecond(0));
                     sc2.setHeSoGia(1.0f);
 
                     SuatChieu sc3 = new SuatChieu();
                     sc3.setPhim(phims.get(1)); // Phim: Kung Fu Panda 4
                     sc3.setPhongChieu(phongs.get(2)); // Phòng VIP
-                    sc3.setThoiGianChieu(now.withHour(19).withMinute(15).withSecond(0)); 
+                    sc3.setThoiGianChieu(now.withHour(19).withMinute(15).withSecond(0));
                     sc3.setHeSoGia(1.0f);
-                    
+
                     List<SuatChieu> savedShowtimes = suatChieuRepository.saveAll(Arrays.asList(sc1, sc2, sc3));
                     System.out.println("✅ Mock showtime data successfully seeded!");
 
@@ -232,9 +262,9 @@ public class DataSeeder {
             }
         };
     }
-    
+
     private String determineSeatType(int index) {
-     return index <= 30 ? "THUONG" : "VIP";
+        return index <= 30 ? "THUONG" : "VIP";
 
     }
 }

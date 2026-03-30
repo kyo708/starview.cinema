@@ -7,14 +7,16 @@ import lombok.Data;
 @Data
 public class CheckoutRequest {
 	private List<Integer> seatIds;
-	
+
 	private String sessionId;
-	
+
 	private String email;
-	
+
 	private String phone;
-	
+
 	private String cardNumber;
-	
+
 	private List<String> seatNames;
+
+	private String voucherCode;
 }
