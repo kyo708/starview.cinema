@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import com.starview.cinemabooking.model.DonHang;
 import com.starview.cinemabooking.model.GheSuatChieu;
 
 @Repository
@@ -15,4 +16,5 @@ public interface GheSuatChieuRepository extends JpaRepository<GheSuatChieu, Inte
     long countBySuatChieuIdAndTrangThaiIgnoreCase(Integer suatChieuId, String trangThai);
     //  tìm ghế theo ID của suất chiếu
     List<GheSuatChieu> findBySuatChieu_Id(Integer suatChieuId);
+    List<GheSuatChieu> findByDonHang(DonHang donHang);
 }
