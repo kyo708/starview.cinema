@@ -2,6 +2,7 @@ package com.starview.cinemabooking.service;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -33,10 +34,12 @@ public class VNPayService {
     @Value("${vnpay.returnUrl}")
     private String vnp_ReturnUrl;
 
-    public String createPaymentUrl(long amount, String orderInfo, String orderId, HttpServletRequest request) {
+    public String createPaymentUrl(long amount, String orderInfo, String orderId, LocalDateTime expireDate, HttpServletRequest request) {
         String vnp_Version = "2.1.0";
         String vnp_Command = "pay";
-        String vnp_TxnRef = orderId;
+        
+        // Thêm timestamp để đảm bảo mã giao dịch luôn là duy nhất trên VNPay Sandbox (Tránh lỗi quét QR)
+        String vnp_TxnRef = orderId + "_" + System.currentTimeMillis();
         String vnp_IpAddr = VNPayConfig.getIpAddress(request);
 
         long amountInVND = amount * 100;
@@ -59,8 +62,15 @@ public class VNPayService {
         String vnp_CreateDate = formatter.format(cld.getTime());
         vnp_Params.put("vnp_CreateDate", vnp_CreateDate);
 
-        cld.add(Calendar.MINUTE, 15);
-        String vnp_ExpireDate = formatter.format(cld.getTime());
+        // Sử dụng thời gian hết hạn giữ ghế từ logic nghiệp vụ thay vì hardcode 15 phút
+        String vnp_ExpireDate;
+        if (expireDate != null) {
+            vnp_ExpireDate = expireDate.format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        } else {
+            // Fallback an toàn: nếu không có thời gian cụ thể, đặt 15 phút
+            cld.add(Calendar.MINUTE, 15);
+            vnp_ExpireDate = formatter.format(cld.getTime());
+        }
         vnp_Params.put("vnp_ExpireDate", vnp_ExpireDate);
 
         List<String> fieldNames = new ArrayList<>(vnp_Params.keySet());

@@ -303,4 +303,27 @@ public class TicketService {
         gheSuatChieuRepository.saveAll(seats);
         log.warn("Order {} failed/canceled. Seats released.", orderId);
     }
+
+    @Transactional(readOnly = true)
+    public String getOrderStatus(Integer orderId) {
+        DonHang donHang = donHangRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng"));
+        return donHang.getTrangThaiThanhToan();
+    }
+
+    @Transactional(readOnly = true)
+    public LocalDateTime getSeatExpirationForOrder(Integer orderId) {
+        DonHang donHang = donHangRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng với ID: " + orderId));
+        
+        List<GheSuatChieu> seats = donHang.getGheSuatChieus();
+        
+        if (seats == null || seats.isEmpty()) {
+            log.warn("Đơn hàng PENDING ID: {} không có ghế nào được liên kết. Sử dụng thời gian hết hạn mặc định.", orderId);
+            return LocalDateTime.now().plusMinutes(5); 
+        }
+        
+        // Tất cả các ghế trong một đơn hàng đều có cùng thời gian hết hạn
+        return seats.get(0).getThoiGianHetHanGiuCho();
+    }
 }

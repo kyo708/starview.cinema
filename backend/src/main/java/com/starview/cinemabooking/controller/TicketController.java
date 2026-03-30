@@ -1,5 +1,6 @@
 package com.starview.cinemabooking.controller;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -7,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -85,23 +88,19 @@ public class TicketController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body("Vui lòng chọn ít nhất một ghế trước khi thanh toán.");
             }
-        	
-        	// Validate thẻ tín dụng mock (US #9 - AC #36)
-            // Bh VNPay validate
-//            if (request.getCardNumber() == null || !request.getCardNumber().matches("\\d{16}")) {
-//                return ResponseEntity.badRequest().body("Số thẻ tín dụng không hợp lệ.");
-//            }
-            
             // 2. Tạo đơn hàng PENDING (Ghế vẫn giữ trạng thái DANG_CHO)
             DonHang donHang = ticketService.createPendingOrder(request);
             
             // 3. Chuẩn bị dữ liệu cho VNPay
-            long amount = Math.round(donHang.getTongTien()); // Ép kiểu float/double sang long cho VNPay
+            long amount = Math.round(donHang.getTongTien()); 
             String orderInfo = "Thanh toan ve phim. Ma don hang DH" + donHang.getId();
             String orderId = String.valueOf(donHang.getId());
 
-            // 4. Gọi Service sinh URL bảo mật
-            String paymentUrl = vnPayService.createPaymentUrl(amount, orderInfo, orderId, httpRequest);
+            // THE FIX: Fetch the exact expiration time for this specific order
+            LocalDateTime expireDate = ticketService.getSeatExpirationForOrder(donHang.getId());
+
+            // 4. Gọi Service sinh URL bảo mật (Now passing expireDate!)
+            String paymentUrl = vnPayService.createPaymentUrl(amount, orderInfo, orderId, expireDate, httpRequest);
             
             // 5. Trả URL về cho React frontend để thực hiện redirect (window.location.href)
             return ResponseEntity.ok(Map.of(
@@ -125,5 +124,11 @@ public class TicketController {
     public ResponseEntity<String> sendEmail(@RequestBody EmailTicketRequest request) {
         emailService.sendTicketEmail(request);
         return ResponseEntity.ok("Email đang được gửi đi!");
+    }
+
+    @GetMapping("/{orderId}/status")
+    public ResponseEntity<Map<String, String>> getOrderStatus(@PathVariable Integer orderId) {
+        String status = ticketService.getOrderStatus(orderId);
+        return ResponseEntity.ok(Map.of("status", status));
     }
 }
