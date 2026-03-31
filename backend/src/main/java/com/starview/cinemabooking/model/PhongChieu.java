@@ -23,7 +23,7 @@ public class PhongChieu {
 	private Integer tongSoGhe;
 	
 	// e.g., "2D", "3D", "IMAX", "VIP"
-    @Column(name = "loai_phong", length = 50, nullable = false)
+    @Column(name = "loai_phong", length = 50)
     private String loaiPhong = "2D"; // Default value
 
     // Phụ thu cho loại phòng (VD: Phòng 3D phụ thu 20k)

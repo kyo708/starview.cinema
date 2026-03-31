@@ -190,32 +190,82 @@ function SeatSelection() {
   const seatGrid = useMemo(() => {
     if (!seats || seats.length === 0) return [];
 
-    const colsPerRow = 10; // Giả định mỗi hàng có 10 ghế
+    let loaiPhong = showtimeData?.loaiPhong;
+
+    // BẮT MỌI TRƯỜNG HỢP: Dự phòng URL dùng tên tham số khác (cinema, room, roomName)
+    const roomNameFromUrl = searchParams.get('cinema') || searchParams.get('roomName') || searchParams.get('room') || cinemaName || '';
+
+    if (!loaiPhong && roomNameFromUrl) {
+      const nameUpper = String(roomNameFromUrl).toUpperCase();
+      if (nameUpper.includes('VIP')) loaiPhong = 'VIP';
+      else if (nameUpper.includes('IMAX') || nameUpper.includes('PHÒNG 2') || nameUpper.includes('PHONG 2')) loaiPhong = 'IMAX';
+      else loaiPhong = '2D';
+    }
+
+    let colsPerRow = 10; // Mặc định 10 cột
+    
+    if (loaiPhong && String(loaiPhong).trim().toUpperCase() === 'IMAX') {
+      colsPerRow = 12; // Phòng IMAX bự hơn nên có 12 cột
+    } else if (loaiPhong && String(loaiPhong).trim().toUpperCase() === 'VIP') {
+      colsPerRow = 8;  // Phòng VIP ghế lớn hơn nên chỉ có 8 cột
+    }
+
+    // Dòng này giúp bạn debug chính xác bệnh nằm ở đâu
+    console.log("🛠 DEBUG - loaiPhong:", loaiPhong, "| colsPerRow:", colsPerRow, "| roomNameFromUrl:", roomNameFromUrl);
+
     const rows = [];
     let currentRow = [];
     const rowLabels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    let currentRowIndex = 0;
+    let currentColsCount = 0; // Đếm số cột đã chiếm dụng trong hàng
 
     seats.forEach((seat, index) => {
-      const rowIndex = Math.floor(index / colsPerRow);
-      const colIndex = (index % colsPerRow) + 1;
-      const seatLabel = `${rowLabels[rowIndex]}${colIndex}`;
-
       const isCurrentlySelected = selectedSeats.some(s => Number(s.id) === Number(seat.id));
+      const isSweetbox = seat.loaiGhe === 'SWEETBOX';
+      const colsNeeded = isSweetbox ? 2 : 1; // Ghế Sweetbox chiếm 2 cột
 
+      // Nếu thêm ghế này vào bị vượt quá số cột của hàng -> Đẩy xuống hàng mới
+      if (currentColsCount + colsNeeded > colsPerRow) {
+        rows.push({ rowLabel: rowLabels[currentRowIndex], seats: currentRow });
+        currentRow = [];
+        currentRowIndex++;
+        currentColsCount = 0;
+      }
+
+      // Tên ghế (Ví dụ A1, A2, A3-4).
+      // Logic mới để xử lý ghế đôi, đảm bảo label phản ánh đúng số cột nó chiếm
+      const startCol = currentColsCount + 1;
+      const endCol = currentColsCount + colsNeeded;
+      let seatLabel;
+      if (isSweetbox) {
+        seatLabel = `${rowLabels[currentRowIndex]}${startCol}-${endCol}`;
+      } else {
+        seatLabel = `${rowLabels[currentRowIndex]}${startCol}`;
+      }
+             
       currentRow.push({
         ...seat,
         seatLabel, 
-        // 4. LUẬT MỚI: Chỉ khóa NẾU (đã bán thật) HOẶC (đang chờ NHƯNG KHÔNG PHẢI của mình)
         isSold: seat.trangThai === 'DA_BAN' || (seat.trangThai === 'DANG_CHO' && !isCurrentlySelected),
       });
+      
+      currentColsCount += colsNeeded;
 
-      if (currentRow.length === colsPerRow || index === seats.length - 1) {
-        rows.push({ rowLabel: rowLabels[rowIndex], seats: currentRow });
+      // Chốt hàng nếu đã lấp đầy số cột (và chưa phải ghế cuối cùng)
+      if (currentColsCount === colsPerRow && index !== seats.length - 1) {
+        rows.push({ rowLabel: rowLabels[currentRowIndex], seats: currentRow });
         currentRow = [];
+        currentRowIndex++;
+        currentColsCount = 0;
       }
     });
+
+    // Đẩy hàng cuối cùng vào nếu còn dư
+    if (currentRow.length > 0) {
+      rows.push({ rowLabel: rowLabels[currentRowIndex], seats: currentRow });
+    }
     return rows;
-  }, [seats, selectedSeats]);
+  }, [seats, selectedSeats, showtimeData]);
 
   const handleSeatClick = async (seatObject) => {
     // Không cho click ghế đã bán
@@ -368,8 +418,8 @@ const totalPrice = useMemo(() => {
                   <div className="seats">
                     {seatsInRow.map(seat => {
                       const isSelected = selectedSeats.some(s => s.id === seat.id);
-                      // Giả định lối đi sau ghế thứ 3 và 7
-                      const isAisle = seat.seatLabel.endsWith('2') || seat.seatLabel.endsWith('8');
+                      // Giả định lối đi (Trừ hàng ghế Sweetbox ở cuối)
+                      const isAisle = (seat.seatLabel.endsWith('2') || seat.seatLabel.endsWith('8')) && seat.loaiGhe !== 'SWEETBOX';
                       return (
                         <React.Fragment key={seat.id}>
                           <Seat 
@@ -402,6 +452,9 @@ const totalPrice = useMemo(() => {
             </div>
             <div className="legend-item">
               <div className="legend-seat-wrapper"><Seat isSold={true} isSelected={false} /></div> Sold
+            </div>
+            <div className="legend-item">
+              <div className="legend-seat-wrapper"><Seat loaiGhe="SWEETBOX" /></div> Sweetbox Đôi
             </div>
           </div>
         </div>

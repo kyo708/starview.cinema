@@ -73,18 +73,28 @@ public class SuatChieuService {
 
         SuatChieu savedSuatChieu = suatChieuRepository.save(suatChieu);
 
-        int totalSeats = phongChieu.getTongSoGhe();
-        List<GheSuatChieu> gheSuatChieus = new ArrayList<>(totalSeats);
+        int totalCapacity = phongChieu.getTongSoGhe();
+        List<GheSuatChieu> gheSuatChieus = new ArrayList<>();
+        int seatsGenerated = 0;
 
-        for (int i = 1; i <= totalSeats; i++) {
+        while (seatsGenerated < totalCapacity) {
             GheSuatChieu ghe = new GheSuatChieu();
             ghe.setSuatChieu(savedSuatChieu);
             ghe.setDonHang(null);
-            ghe.setLoaiGhe(determineSeatType(i, totalSeats));
+
+            String seatType = determineSeatType(seatsGenerated + 1, totalCapacity);
+            ghe.setLoaiGhe(seatType);
+
             ghe.setTrangThai(SEAT_STATUS_TRONG);
             ghe.setThoiGianHetHanGiuCho(start);
             ghe.setPhienBan(1);
             gheSuatChieus.add(ghe);
+
+            if ("SWEETBOX".equals(seatType)) {
+                seatsGenerated += 2; // Ghế đôi chiếm 2 sức chứa
+            } else {
+                seatsGenerated += 1; // Ghế thường/VIP chiếm 1 sức chứa
+            }
         }
 
         gheSuatChieuRepository.saveAll(gheSuatChieus);
@@ -94,7 +104,7 @@ public class SuatChieuService {
                 phim.getId(),
                 phongChieu.getId(),
                 savedSuatChieu.getThoiGianChieu(),
-                totalSeats);
+                totalCapacity);
     }
 
     public MovieShowtimesByDateResponse getMovieShowtimesByDate(Integer phimId, LocalDate date) {

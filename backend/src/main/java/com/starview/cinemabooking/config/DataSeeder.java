@@ -251,16 +251,25 @@ public class DataSeeder {
 
                     List<GheSuatChieu> allSeats = new ArrayList<>();
                     for (SuatChieu showtime : savedShowtimes) {
-                        int totalSeats = showtime.getPhongChieu().getTongSoGhe();
-                        for (int i = 1; i <= totalSeats; i++) {
+                        int totalCapacity = showtime.getPhongChieu().getTongSoGhe();
+                        int seatsGenerated = 0;
+                        while (seatsGenerated < totalCapacity) {
                             GheSuatChieu ghe = new GheSuatChieu();
                             ghe.setSuatChieu(showtime);
-                            // Sử dụng logic mới để gán loại ghế dựa trên vị trí index
-                            ghe.setLoaiGhe(determineSeatType(i, totalSeats));
+
+                            String seatType = determineSeatType(seatsGenerated + 1, totalCapacity);
+                            ghe.setLoaiGhe(seatType);
+
                             ghe.setTrangThai("TRONG");
                             ghe.setThoiGianHetHanGiuCho(showtime.getThoiGianChieu());
-                            ghe.setPhienBan(1); // Đổi sang ghe.setPhienBan(1) khi merge PR #54
+                            ghe.setPhienBan(1);
                             allSeats.add(ghe);
+
+                            if ("SWEETBOX".equals(seatType)) {
+                                seatsGenerated += 2; // Ghế đôi chiếm 2 sức chứa
+                            } else {
+                                seatsGenerated += 1; // Ghế thường/VIP chiếm 1 sức chứa
+                            }
                         }
                     }
                     gheSuatChieuRepository.saveAll(allSeats);

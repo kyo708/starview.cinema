@@ -20,6 +20,7 @@ public class SuatChieuMapper {
                 .tenPhong(suatChieu.getPhongChieu().getTenPhong())
                 .thoiGianChieu(suatChieu.getThoiGianChieu())
                 .heSoGia(suatChieu.getHeSoGia())
+                .loaiPhong(suatChieu.getPhongChieu().getLoaiPhong())
                 .build();
 	}
 }
