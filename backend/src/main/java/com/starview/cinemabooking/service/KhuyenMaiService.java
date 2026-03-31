@@ -57,6 +57,37 @@ public class KhuyenMaiService {
         return result;
     }
 
+    @Transactional(readOnly = true) // IMPORTANT: Read-only transaction, does not update usage count
+    public VoucherApplyResult previewVoucher(String voucherCode, float originalPrice) {
+        VoucherApplyResult result = new VoucherApplyResult();
+        result.setOriginalPrice(originalPrice);
+
+        if (voucherCode == null || voucherCode.trim().isEmpty()) {
+            throw new IllegalStateException("Vui lòng nhập mã khuyến mãi.");
+        }
+
+        KhuyenMai khuyenMai = khuyenMaiRepository.findByMaKhuyenMaiIgnoreCase(voucherCode.trim())
+                .orElseThrow(() -> new IllegalStateException("Mã khuyến mãi không hợp lệ."));
+
+        if (khuyenMai.getNgayHetHan() != null && khuyenMai.getNgayHetHan().isBefore(LocalDateTime.now())) {
+            throw new IllegalStateException("Mã khuyến mãi đã hết hạn.");
+        }
+
+        if (khuyenMai.getGioiHanSuDung() != null && khuyenMai.getDaSuDung() != null
+                && khuyenMai.getDaSuDung() >= khuyenMai.getGioiHanSuDung()) {
+            throw new IllegalStateException("Mã khuyến mãi đã hết lượt sử dụng.");
+        }
+
+        float discountAmount = calculateDiscountAmount(khuyenMai, originalPrice);
+        float discountedPrice = originalPrice - discountAmount;
+
+        // DO NOT increment usage or save entity in a preview
+
+        result.setDiscountAmount(discountAmount);
+        result.setDiscountedPrice(discountedPrice);
+        return result;
+    }
+
     private float calculateDiscountAmount(KhuyenMai khuyenMai, float originalPrice) {
         if (khuyenMai.getGiaTri() == null || khuyenMai.getGiaTri() <= 0f) {
             throw new IllegalStateException("Giá trị mã khuyến mãi không hợp lệ.");

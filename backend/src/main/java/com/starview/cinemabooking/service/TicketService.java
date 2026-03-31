@@ -135,7 +135,7 @@ public class TicketService {
         donHang.setTongTienGoc(voucherResult.getOriginalPrice());
         donHang.setTongTien(voucherResult.getDiscountedPrice());
         donHang.setKhuyenMai(voucherResult.getKhuyenMai());
-        donHang.setTrangThaiThanhToan("SUCCESS"); // Mock payment tạm giả sử auto thành công
+        donHang.setTrangThaiThanhToan("SUCCESS"); 
         donHang.setThoiGianTao(LocalDateTime.now());
 
         // Lưu và lấy id Đơn hàng

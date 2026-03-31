@@ -33,7 +33,10 @@ function Payment() {
   const [ticketData, setTicketData] = useState(null);
   const [voucherCode, setVoucherCode] = useState('');
   const [isVoucherApplied, setIsVoucherApplied] = useState(false);
+  const [finalPrice, setFinalPrice] = useState(totalPrice); // State cho giá cuối cùng
+  const [discountAmount, setDiscountAmount] = useState(0); // State cho số tiền được giảm
   const [paymentMessage, setPaymentMessage] = useState(null); // Thay thế cho hộp thoại alert()
+  const [voucherError, setVoucherError] = useState(''); // State cho lỗi voucher
 
   // Hook đọc tham số URL để bắt sự kiện VNPay trả về
   const [searchParams] = useSearchParams();
@@ -207,11 +210,36 @@ function Payment() {
     );
   }
 
-  const handleApplyVoucher = () => {
+  const handleApplyVoucher = async () => {
     if (!voucherCode.trim()) return;
-    // Tương lai sẽ gọi API ở đây để kiểm tra và tính toán lại giá
-    alert(`Áp dụng mã giảm giá ${voucherCode} thành công! (Demo)`);
-    setIsVoucherApplied(true);
+    setVoucherError(''); // Reset lỗi trước khi gọi API
+
+    try {
+      const response = await fetch(`${baseUrl}/api/v1/vouchers/preview`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          voucherCode: voucherCode,
+          originalPrice: totalPrice // Gửi giá gốc để backend tính toán
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        // Nếu backend trả về lỗi (vd: 400 Bad Request), ném lỗi với message từ backend
+        throw new Error(result.message || 'Mã voucher không hợp lệ hoặc đã hết hạn.');
+      }
+
+      // Thành công
+      setFinalPrice(result.discountedPrice);
+      setDiscountAmount(result.discountAmount);
+      setIsVoucherApplied(true);
+
+    } catch (error) {
+      // Hiển thị lỗi ngay dưới ô nhập voucher
+      setVoucherError(error.message);
+    }
   };
 
   const handlePayment = async (e) => {
@@ -230,7 +258,8 @@ function Payment() {
           seatNames: selectedSeats, 
           sessionId: sessionId, 
           email: email, 
-          phone: phone
+          phone: phone,
+          voucherCode: isVoucherApplied ? voucherCode : null // Gửi mã voucher nếu đã áp dụng
         })
       });
 
@@ -254,7 +283,7 @@ function Payment() {
         formattedDate, 
         showtime, 
         selectedSeats, // Vẫn truyền label A1, A2... để hiển thị trên vé
-        totalPrice: totalPrice, // Lấy thẳng từ React State, không cần backend trả về nữa
+        totalPrice: finalPrice, // LƯU Ý: Dùng giá cuối cùng cho vé
         bookingRef: data.bookingRef, 
         customerInfo: { email, phone }
       };
@@ -316,7 +345,7 @@ function Payment() {
 
             {/* Nút thanh toán sẽ disable nếu chưa nhập đủ chuẩn form */}
             <button type="submit" className="btn-pay" disabled={isProcessing || !email || phone.length < 10}>
-              {isProcessing ? 'Đang kết nối VNPay...' : `Thanh toán VNPay (${totalPrice?.toLocaleString('vi-VN')} ₫)`}
+              {isProcessing ? 'Đang kết nối VNPay...' : `Thanh toán VNPay (${finalPrice?.toLocaleString('vi-VN')} ₫)`}
             </button>
           </form>
         </div>
@@ -347,17 +376,27 @@ function Payment() {
           <div className="voucher-section">
             <input 
               type="text" placeholder="Nhập mã voucher..." 
-              value={voucherCode} onChange={(e) => setVoucherCode(e.target.value)}
+              value={voucherCode} onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
               disabled={isVoucherApplied}
             />
             <button type="button" onClick={handleApplyVoucher} disabled={isVoucherApplied || !voucherCode.trim()}>
               {isVoucherApplied ? 'Đã áp dụng' : 'Áp dụng'}
             </button>
           </div>
+          {/* Hiển thị lỗi voucher nếu có */}
+          {voucherError && <p className="voucher-error-text">{voucherError}</p>}
+
+          {/* Hiển thị chi tiết giá nếu đã áp dụng voucher */}
+          {isVoucherApplied && (
+            <div className="summary-discount-details">
+              <p><span>Tạm tính</span>{totalPrice?.toLocaleString('vi-VN')} ₫</p>
+              <p className="discount-amount"><span>Giảm giá</span>- {discountAmount?.toLocaleString('vi-VN')} ₫</p>
+            </div>
+          )}
 
             <div className="total-price">
-              <span>Total Price</span>
-              <span>{totalPrice?.toLocaleString('vi-VN')} ₫</span>
+              <span>Thành tiền</span>
+              <span>{finalPrice?.toLocaleString('vi-VN')} ₫</span>
             </div>
           </div>
         </div>
