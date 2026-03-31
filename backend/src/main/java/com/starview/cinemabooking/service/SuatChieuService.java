@@ -80,7 +80,7 @@ public class SuatChieuService {
             GheSuatChieu ghe = new GheSuatChieu();
             ghe.setSuatChieu(savedSuatChieu);
             ghe.setDonHang(null);
-            ghe.setLoaiGhe(determineSeatType(i));
+            ghe.setLoaiGhe(determineSeatType(i, totalSeats));
             ghe.setTrangThai(SEAT_STATUS_TRONG);
             ghe.setThoiGianHetHanGiuCho(start);
             ghe.setPhienBan(1);
@@ -167,9 +167,20 @@ public class SuatChieuService {
         }
     }
 
-    private String determineSeatType(int index) {
-       
-     return index <= 30 ? "THUONG" : "VIP";
+    private String determineSeatType(int index, int totalSeats) {
+    	// Giả sử 10 ghế cuối cùng luôn là Sweetbox đôi
+        if (index > totalSeats - 10) {
+            return "SWEETBOX";
+        } 
+        // Giả sử nửa sau của rạp (trừ sweetbox) là ghế VIP có góc nhìn đẹp nhất
+        else if (index > totalSeats / 2) {
+            return "VIP";
+        } 
+        // Nửa trước rạp là ghế Standard
+        else {
+            return "THUONG"; 
+        }
+
     }
 
     private String resolveAvailabilityStatus(Integer totalSeats, long availableSeats) {
