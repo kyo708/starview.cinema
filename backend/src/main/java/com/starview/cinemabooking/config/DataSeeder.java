@@ -174,14 +174,20 @@ public class DataSeeder {
                 PhongChieu room1 = new PhongChieu();
                 room1.setTenPhong("Phòng 1");
                 room1.setTongSoGhe(100);
+                room1.setLoaiPhong("2D");
+                room1.setPhuThu(0.0f); // Không phụ thu
 
                 PhongChieu room2 = new PhongChieu();
                 room2.setTenPhong("Phòng 2");
                 room2.setTongSoGhe(80);
+                room2.setLoaiPhong("IMAX");
+                room2.setPhuThu(30000.0f); // Phụ thu 30k cho phim IMAX
 
                 PhongChieu room3 = new PhongChieu();
                 room3.setTenPhong("Phòng VIP");
                 room3.setTongSoGhe(50);
+                room3.setLoaiPhong("VIP");
+                room3.setPhuThu(50000.0f); // Phụ thu 50k cho phòng siêu sang
 
                 phongChieuRepository.saveAll(Arrays.asList(room1, room2, room3));
                 System.out.println("✅ Mock room data successfully seeded!");
@@ -232,7 +238,7 @@ public class DataSeeder {
                     sc2.setPhim(phims.get(0)); // Phim: Dune 2
                     sc2.setPhongChieu(phongs.get(1)); // Phòng 2
                     sc2.setThoiGianChieu(now.plusDays(1).withHour(20).withMinute(0).withSecond(0));
-                    sc2.setHeSoGia(1.0f);
+                    sc2.setHeSoGia(1.2f); // Suất chiếu giờ vàng cuối tuần đắt hơn x1.2
 
                     SuatChieu sc3 = new SuatChieu();
                     sc3.setPhim(phims.get(1)); // Phim: Kung Fu Panda 4
@@ -249,7 +255,8 @@ public class DataSeeder {
                         for (int i = 1; i <= totalSeats; i++) {
                             GheSuatChieu ghe = new GheSuatChieu();
                             ghe.setSuatChieu(showtime);
-                            ghe.setLoaiGhe(determineSeatType(i));
+                            // Sử dụng logic mới để gán loại ghế dựa trên vị trí index
+                            ghe.setLoaiGhe(determineSeatType(i, totalSeats));
                             ghe.setTrangThai("TRONG");
                             ghe.setThoiGianHetHanGiuCho(showtime.getThoiGianChieu());
                             ghe.setPhienBan(1); // Đổi sang ghe.setPhienBan(1) khi merge PR #54
@@ -263,8 +270,19 @@ public class DataSeeder {
         };
     }
 
-    private String determineSeatType(int index) {
-        return index <= 30 ? "THUONG" : "VIP";
+    private String determineSeatType(int index, int totalSeats) {
+    	// Giả sử 10 ghế cuối cùng luôn là Sweetbox đôi
+        if (index > totalSeats - 10) {
+            return "SWEETBOX";
+        } 
+        // Giả sử nửa sau của rạp (trừ sweetbox) là ghế VIP có góc nhìn đẹp nhất
+        else if (index > totalSeats / 2) {
+            return "VIP";
+        } 
+        // Nửa trước rạp là ghế Standard
+        else {
+            return "THUONG"; 
+        }
 
     }
 }
