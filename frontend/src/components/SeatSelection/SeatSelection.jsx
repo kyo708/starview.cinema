@@ -83,7 +83,6 @@ function SeatSelection() {
     }
     setIsSeatsLoading(true); // Set loading true while fetching
     const url = `${baseUrl}/api/v1/suat-chieu/${suatChieuId}/ghe`;
-    console.log(" Đang gọi API lấy ghế tại:", url);
     fetch(url)
       .then(res => {
         if (!res.ok) throw new Error("Lỗi tải danh sách ghế");

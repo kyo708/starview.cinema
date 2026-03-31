@@ -283,6 +283,35 @@
   cursor: not-allowed;
 }
 
+.voucher-error-text {
+  color: #f44336;
+  font-size: 0.85rem;
+  margin-top: 8px;
+  text-align: left;
+}
+
+.summary-discount-details {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px dashed #444;
+}
+
+.summary-discount-details p {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+}
+
+.summary-discount-details p span {
+  color: #aaa;
+}
+
+.summary-discount-details .discount-amount {
+  color: #4caf50; /* Màu xanh cho giảm giá */
+  font-weight: 600;
+}
+
 /* Responsive Layout */
 @media (max-width: 900px) {
   .payment-content {
