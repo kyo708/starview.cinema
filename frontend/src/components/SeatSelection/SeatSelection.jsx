@@ -205,13 +205,10 @@ function SeatSelection() {
     let colsPerRow = 10; // Mặc định 10 cột
     
     if (loaiPhong && String(loaiPhong).trim().toUpperCase() === 'IMAX') {
-      colsPerRow = 12; // Phòng IMAX bự hơn nên có 12 cột
+      colsPerRow = 8; // Phòng IMAX bự hơn nên có 12 cột
     } else if (loaiPhong && String(loaiPhong).trim().toUpperCase() === 'VIP') {
-      colsPerRow = 8;  // Phòng VIP ghế lớn hơn nên chỉ có 8 cột
+      colsPerRow = 6;  // Phòng VIP ghế lớn hơn nên chỉ có 8 cột
     }
-
-    // Dòng này giúp bạn debug chính xác bệnh nằm ở đâu
-    console.log("🛠 DEBUG - loaiPhong:", loaiPhong, "| colsPerRow:", colsPerRow, "| roomNameFromUrl:", roomNameFromUrl);
 
     const rows = [];
     let currentRow = [];

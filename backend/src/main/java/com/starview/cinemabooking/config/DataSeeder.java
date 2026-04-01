@@ -179,13 +179,13 @@ public class DataSeeder {
 
                 PhongChieu room2 = new PhongChieu();
                 room2.setTenPhong("Phòng 2");
-                room2.setTongSoGhe(80);
+                room2.setTongSoGhe(64);
                 room2.setLoaiPhong("IMAX");
                 room2.setPhuThu(30000.0f); // Phụ thu 30k cho phim IMAX
 
                 PhongChieu room3 = new PhongChieu();
                 room3.setTenPhong("Phòng VIP");
-                room3.setTongSoGhe(50);
+                room3.setTongSoGhe(48);
                 room3.setLoaiPhong("VIP");
                 room3.setPhuThu(50000.0f); // Phụ thu 50k cho phòng siêu sang
 
@@ -257,7 +257,7 @@ public class DataSeeder {
                             GheSuatChieu ghe = new GheSuatChieu();
                             ghe.setSuatChieu(showtime);
 
-                            String seatType = determineSeatType(seatsGenerated + 1, totalCapacity);
+                            String seatType = determineSeatType(seatsGenerated + 1, totalCapacity, showtime.getPhongChieu().getLoaiPhong());
                             ghe.setLoaiGhe(seatType);
 
                             ghe.setTrangThai("TRONG");
@@ -279,19 +279,27 @@ public class DataSeeder {
         };
     }
 
-    private String determineSeatType(int index, int totalSeats) {
-    	// Giả sử 10 ghế cuối cùng luôn là Sweetbox đôi
-        if (index > totalSeats - 10) {
-            return "SWEETBOX";
-        } 
-        // Giả sử nửa sau của rạp (trừ sweetbox) là ghế VIP có góc nhìn đẹp nhất
-        else if (index > totalSeats / 2) {
-            return "VIP";
-        } 
-        // Nửa trước rạp là ghế Standard
-        else {
-            return "THUONG"; 
-        }
+    private String determineSeatType(int index, int totalCapacity, String loaiPhong) {
+        String type = (loaiPhong != null) ? loaiPhong.trim().toUpperCase() : "2D";
+        
+        switch (type) {
+            case "VIP":
 
+                if (index <= 12) return "THUONG";
+                else if (index <= 42) return "VIP";
+                else return "SWEETBOX";
+            case "IMAX":
+                // Ví dụ phòng IMAX (Tổng 80 sức chứa): 20 Thường, 40 VIP, 20 sức chứa cho Sweetbox (10 ghế đôi)
+                if (index <= 16) return "THUONG";
+                else if (index <= 56) return "VIP";
+                else return "SWEETBOX";
+                
+            case "2D":
+            default:
+                // Ví dụ phòng 2D (Tổng 100 sức chứa): 40 Thường, 50 VIP, 10 sức chứa cho Sweetbox (5 ghế đôi)
+                if (index <= 30) return "THUONG";
+                else if (index <= 90) return "VIP";
+                else return "SWEETBOX";
+        }
     }
 }
