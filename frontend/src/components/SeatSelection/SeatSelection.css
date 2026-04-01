@@ -421,3 +421,17 @@
   text-align: center;
   margin-top: 20px;
 }
+/* --- CẤU HÌNH RIÊNG CHO SWEETBOX (GHẾ ĐÔI) --- */
+.seat.sweetbox {
+  width: 78px; /* Kích thước = 2x chiều rộng ghế thường + khoảng hở */
+  border-radius: 8px;
+}
+
+.seat.sweetbox .seat-svg {
+  width: 100%; /* Giúp SVG kép giãn đều phủ kín div 78px */
+}
+
+/* Màu của nệm ghế có thể dùng màu hồng/đỏ nếu muốn tạo điểm nhấn lãng mạn */
+.seat.sweetbox.available .seat-cushion {
+  fill: #ff4081; /* Màu tuỳ chọn, nếu muốn giữ màu cam thì xoá dòng này đi */
+}

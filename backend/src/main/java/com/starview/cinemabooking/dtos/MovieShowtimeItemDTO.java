@@ -19,4 +19,5 @@ public class MovieShowtimeItemDTO {
     private Integer tongSoGhe;
     private Long soGheTrong;
     private String availabilityStatus;
+    private String loaiPhong; 
 }

@@ -27,4 +27,6 @@ public class SuatChieuDTO {
     private LocalDateTime thoiGianChieu;
 
     private Float heSoGia;
+
+    private String loaiPhong;
 }
