@@ -31,6 +31,27 @@ public class PhimService {
             return PhimMapper.toDTO(phim);
         }
 
+        // Public - Tìm kiếm phim đang chiếu tối ưu (Database-level filtering)
+        public List<PhimDTO> searchActiveMovies(String keyword) {
+                if (keyword == null || keyword.trim().isEmpty()) {
+                        return getActiveMovies();
+                }
+                return repository.findByTenPhimContainingIgnoreCaseAndIsActiveTrue(keyword.trim())
+                                .stream()
+                                .map(PhimMapper::toDTO)
+                                .collect(Collectors.toList());
+        }
+
+        // Staff - Tìm kiếm phim bằng Query tối ưu
+        public List<PhimDTO> searchMoviesStaff(String name, String category) {
+                String searchName = (name != null && !name.trim().isEmpty()) ? name.trim() : null;
+                String searchCategory = (category != null && !category.trim().isEmpty()) ? category.trim() : null;
+                return repository.searchByFilter(searchName, searchCategory)
+                                .stream()
+                                .map(PhimMapper::toDTO)
+                                .collect(Collectors.toList());
+        }
+
         // #19: Create new movie
         public PhimDTO createMovie(PhimDTO phimDTO) {
                 Phim phim = PhimMapper.toPhim(phimDTO);

@@ -14,11 +14,13 @@ import com.starview.cinemabooking.model.Phim;
 import com.starview.cinemabooking.model.PhongChieu;
 import com.starview.cinemabooking.model.SuatChieu;
 import com.starview.cinemabooking.model.GheSuatChieu;
+import com.starview.cinemabooking.model.KhuyenMai;
 import com.starview.cinemabooking.model.NguoiDung;
 import com.starview.cinemabooking.repository.PhimRepository;
 import com.starview.cinemabooking.repository.PhongChieuRepository;
 import com.starview.cinemabooking.repository.SuatChieuRepository;
 import com.starview.cinemabooking.repository.GheSuatChieuRepository;
+import com.starview.cinemabooking.repository.KhuyenMaiRepository;
 import com.starview.cinemabooking.repository.NguoiDungRepository;
 
 @Configuration
@@ -30,6 +32,7 @@ public class DataSeeder {
             PhongChieuRepository phongChieuRepository,
             SuatChieuRepository suatChieuRepository,
             GheSuatChieuRepository gheSuatChieuRepository,
+            KhuyenMaiRepository khuyenMaiRepository,
             PasswordEncoder passwordEncoder) {
         return args -> {
             // --- RESET DỮ LIỆU TOÀN BỘ (Theo yêu cầu) ---
@@ -39,6 +42,7 @@ public class DataSeeder {
             suatChieuRepository.deleteAll();
             phongChieuRepository.deleteAll();
             phimRepository.deleteAll();
+            khuyenMaiRepository.deleteAll();
 
             // --- TẠO TÀI KHOẢN STAFF MẪU ---
             // Chỉ tạo nếu chưa có tài khoản nào trong DB
@@ -48,7 +52,7 @@ public class DataSeeder {
                 staffUser.setEmail("staff@starview.com");
                 staffUser.setMatKhau(passwordEncoder.encode("123456"));
                 staffUser.setVaiTro("STAFF");
-                
+
                 NguoiDung adminUser = new NguoiDung();
                 adminUser.setHoTen("Admin Account");
                 adminUser.setEmail("admin@starview.com");
@@ -170,17 +174,49 @@ public class DataSeeder {
                 PhongChieu room1 = new PhongChieu();
                 room1.setTenPhong("Phòng 1");
                 room1.setTongSoGhe(100);
+                room1.setLoaiPhong("2D");
+                room1.setPhuThu(0.0f); // Không phụ thu
 
                 PhongChieu room2 = new PhongChieu();
                 room2.setTenPhong("Phòng 2");
-                room2.setTongSoGhe(80);
+                room2.setTongSoGhe(64);
+                room2.setLoaiPhong("IMAX");
+                room2.setPhuThu(30000.0f); // Phụ thu 30k cho phim IMAX
 
                 PhongChieu room3 = new PhongChieu();
                 room3.setTenPhong("Phòng VIP");
-                room3.setTongSoGhe(50);
+                room3.setTongSoGhe(48);
+                room3.setLoaiPhong("VIP");
+                room3.setPhuThu(50000.0f); // Phụ thu 50k cho phòng siêu sang
 
                 phongChieuRepository.saveAll(Arrays.asList(room1, room2, room3));
                 System.out.println("✅ Mock room data successfully seeded!");
+            }
+
+            // --- TẠO MÃ GIẢM GIÁ MẪU ---
+            if (khuyenMaiRepository.count() == 0) {
+                LocalDateTime expiry = LocalDateTime.of(2026, 12, 31, 23, 59, 59);
+
+                KhuyenMai save10 = new KhuyenMai();
+                save10.setMaKhuyenMai("SAVE10");
+                save10.setLoai("PERCENT");
+                save10.setGiaTri(10f);
+                save10.setMaxGiamGia(50000f);
+                save10.setNgayHetHan(expiry);
+                save10.setGioiHanSuDung(1);
+                save10.setDaSuDung(0);
+
+                KhuyenMai flat20000 = new KhuyenMai();
+                flat20000.setMaKhuyenMai("FLAT20000");
+                flat20000.setLoai("FLAT");
+                flat20000.setGiaTri(20000f);
+                flat20000.setMaxGiamGia(null);
+                flat20000.setNgayHetHan(expiry);
+                flat20000.setGioiHanSuDung(1);
+                flat20000.setDaSuDung(0);
+
+                khuyenMaiRepository.saveAll(Arrays.asList(save10, flat20000));
+                System.out.println("✅ Mock voucher data successfully seeded!");
             }
 
             // --- TẠO SUẤT CHIẾU MẪU ---
@@ -191,39 +227,49 @@ public class DataSeeder {
                 // Đảm bảo đã có Phim và Phòng chiếu thì mới tạo Suất chiếu
                 if (!phims.isEmpty() && !phongs.isEmpty()) {
                     LocalDateTime now = LocalDateTime.now();
-                    
+
                     SuatChieu sc1 = new SuatChieu();
                     sc1.setPhim(phims.get(0)); // Phim: Dune 2
                     sc1.setPhongChieu(phongs.get(0)); // Phòng 1
-                    sc1.setThoiGianChieu(now.withHour(18).withMinute(30).withSecond(0)); 
+                    sc1.setThoiGianChieu(now.withHour(18).withMinute(30).withSecond(0));
                     sc1.setHeSoGia(1.0f);
 
                     SuatChieu sc2 = new SuatChieu();
                     sc2.setPhim(phims.get(0)); // Phim: Dune 2
                     sc2.setPhongChieu(phongs.get(1)); // Phòng 2
-                    sc2.setThoiGianChieu(now.plusDays(1).withHour(20).withMinute(0).withSecond(0)); 
-                    sc2.setHeSoGia(1.0f);
+                    sc2.setThoiGianChieu(now.plusDays(1).withHour(20).withMinute(0).withSecond(0));
+                    sc2.setHeSoGia(1.2f); // Suất chiếu giờ vàng cuối tuần đắt hơn x1.2
 
                     SuatChieu sc3 = new SuatChieu();
                     sc3.setPhim(phims.get(1)); // Phim: Kung Fu Panda 4
                     sc3.setPhongChieu(phongs.get(2)); // Phòng VIP
-                    sc3.setThoiGianChieu(now.withHour(19).withMinute(15).withSecond(0)); 
+                    sc3.setThoiGianChieu(now.withHour(19).withMinute(15).withSecond(0));
                     sc3.setHeSoGia(1.0f);
-                    
+
                     List<SuatChieu> savedShowtimes = suatChieuRepository.saveAll(Arrays.asList(sc1, sc2, sc3));
                     System.out.println("✅ Mock showtime data successfully seeded!");
 
                     List<GheSuatChieu> allSeats = new ArrayList<>();
                     for (SuatChieu showtime : savedShowtimes) {
-                        int totalSeats = showtime.getPhongChieu().getTongSoGhe();
-                        for (int i = 1; i <= totalSeats; i++) {
+                        int totalCapacity = showtime.getPhongChieu().getTongSoGhe();
+                        int seatsGenerated = 0;
+                        while (seatsGenerated < totalCapacity) {
                             GheSuatChieu ghe = new GheSuatChieu();
                             ghe.setSuatChieu(showtime);
-                            ghe.setLoaiGhe(determineSeatType(i));
+
+                            String seatType = determineSeatType(seatsGenerated + 1, totalCapacity, showtime.getPhongChieu().getLoaiPhong());
+                            ghe.setLoaiGhe(seatType);
+
                             ghe.setTrangThai("TRONG");
                             ghe.setThoiGianHetHanGiuCho(showtime.getThoiGianChieu());
-                            ghe.setPhienBan(1); // Đổi sang ghe.setPhienBan(1) khi merge PR #54
+                            ghe.setPhienBan(1);
                             allSeats.add(ghe);
+
+                            if ("SWEETBOX".equals(seatType)) {
+                                seatsGenerated += 2; // Ghế đôi chiếm 2 sức chứa
+                            } else {
+                                seatsGenerated += 1; // Ghế thường/VIP chiếm 1 sức chứa
+                            }
                         }
                     }
                     gheSuatChieuRepository.saveAll(allSeats);
@@ -232,9 +278,28 @@ public class DataSeeder {
             }
         };
     }
-    
-    private String determineSeatType(int index) {
-     return index <= 30 ? "THUONG" : "VIP";
 
+    private String determineSeatType(int index, int totalCapacity, String loaiPhong) {
+        String type = (loaiPhong != null) ? loaiPhong.trim().toUpperCase() : "2D";
+        
+        switch (type) {
+            case "VIP":
+
+                if (index <= 12) return "THUONG";
+                else if (index <= 42) return "VIP";
+                else return "SWEETBOX";
+            case "IMAX":
+                // Ví dụ phòng IMAX (Tổng 80 sức chứa): 20 Thường, 40 VIP, 20 sức chứa cho Sweetbox (10 ghế đôi)
+                if (index <= 16) return "THUONG";
+                else if (index <= 56) return "VIP";
+                else return "SWEETBOX";
+                
+            case "2D":
+            default:
+                // Ví dụ phòng 2D (Tổng 100 sức chứa): 40 Thường, 50 VIP, 10 sức chứa cho Sweetbox (5 ghế đôi)
+                if (index <= 30) return "THUONG";
+                else if (index <= 90) return "VIP";
+                else return "SWEETBOX";
+        }
     }
 }

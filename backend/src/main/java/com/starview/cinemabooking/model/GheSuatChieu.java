@@ -43,15 +43,23 @@ public class GheSuatChieu {
     @Column(name = "phien_ban")
     private int phienBan;
     public float calculatePrice() {
-	    // Lấy giá gốc của phim nhân với hệ số giá của suất chiếu
+	    // 1. Lấy giá gốc của phim nhân với hệ số giá của suất chiếu
 	    float basePrice = this.suatChieu.getPhim().getGiaGoc() * this.suatChieu.getHeSoGia();
 	    
-	    // Cộng phụ thu nếu là ghế VIP
-	    if ("VIP".equalsIgnoreCase(this.loaiGhe)) {
-	        return basePrice + 30000f; 
-	    }
+	    // 2. Lấy phụ thu của phòng chiếu (VD: Phòng 3D, IMAX)
+        float roomSurcharge = this.suatChieu.getPhongChieu().getPhuThu();
 	    
-	    return basePrice;
+        // 3. Tính phụ thu loại ghế
+        float seatSurcharge = 0.0f;
+        if ("VIP".equalsIgnoreCase(this.loaiGhe)) {
+            seatSurcharge = 30000f; 
+        } else if ("SWEETBOX".equalsIgnoreCase(this.loaiGhe)) {
+            // Sweetbox costs roughly double the base price
+            seatSurcharge = basePrice; 
+        }
+	    
+        // 4. Tổng tiền
+        return basePrice + roomSurcharge + seatSurcharge;
 	}
     
     @Column(name = "phien_giao_dich")

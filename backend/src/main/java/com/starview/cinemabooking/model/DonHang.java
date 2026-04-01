@@ -13,7 +13,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DonHang {
-	@Id
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
@@ -21,7 +21,7 @@ public class DonHang {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "nguoi_dung_id", nullable = true) // Khách mua vé không cần TK
     private NguoiDung nguoiDung;
-    
+
     @Column(name = "email_khach_hang", nullable = false)
     private String emailKhachHang;
 
@@ -31,12 +31,23 @@ public class DonHang {
     @Column(name = "tong_tien", nullable = false)
     private Float tongTien;
 
+    @Column(name = "tong_tien_goc")
+    private Float tongTienGoc;
+
+    // Relationship: KHUYEN_MAI ||--o{ DON_HANG
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "khuyen_mai_id", nullable = true)
+    private KhuyenMai khuyenMai;
+
     // e.g., "Chờ thanh toán", "Thành công", "Thất bại"
     @Column(name = "trang_thai_thanh_toan", length = 50, nullable = false)
     private String trangThaiThanhToan;
 
     @Column(name = "thoi_gian_tao", nullable = false)
     private LocalDateTime thoiGianTao;
+    
+    @Column(name = "danh_sach_ghe")
+    private String danhSachGhe; // A1, A2...
 
     // Relationship: DON_HANG ||--o{ GHE_SUAT_CHIEU : "chứa"
     @OneToMany(mappedBy = "donHang", fetch = FetchType.LAZY)

@@ -6,34 +6,37 @@ const baseUrl = import.meta.env.VITE_BASE_URL || 'http://localhost:8080';
 
 function Navbar() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [allMovies, setAllMovies] = useState([]);
-  const [filteredMovies, setFilteredMovies] = useState([]);
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
   const navigate = useNavigate();
   const searchContainerRef = useRef(null);
 
-  // Fetch all movies on component mount
-  useEffect(() => {
-    fetch(`${baseUrl}/api/v1/phim`)
-      .then(res => res.json())
-      .then(data => setAllMovies(data.filter(movie => movie.isActive))) // Only search active movies
-      .catch(err => console.error("Failed to fetch movies for search:", err));
-  }, []);
-
-  // Filter movies when searchTerm changes
+  // Tối ưu hóa: Thay vì tải tất cả phim về client, ta sẽ gọi API search của backend
+  // Sử dụng Debounce để tránh gọi API liên tục mỗi khi gõ phím
   useEffect(() => {
     if (searchTerm.trim() === '') {
-      setFilteredMovies([]);
+      setSearchResults([]);
       setIsDropdownVisible(false);
+      setIsSearching(false);
       return;
     }
 
-    const results = allMovies.filter(movie =>
-      movie.tenPhim.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    setFilteredMovies(results);
-    setIsDropdownVisible(results.length > 0);
-  }, [searchTerm, allMovies]);
+    setIsSearching(true);
+    const delayDebounceFn = setTimeout(() => {
+      const searchUrl = `${baseUrl}/api/v1/phim/search?keyword=${encodeURIComponent(searchTerm)}`;
+      fetch(searchUrl)
+        .then(res => res.json())
+        .then(data => {
+          setSearchResults(data);
+          setIsDropdownVisible(true); // Luôn hiện dropdown để báo "Không tìm thấy" nếu cần
+        })
+        .catch(err => console.error("Lỗi tìm kiếm phim:", err))
+        .finally(() => setIsSearching(false));
+    }, 300); // Chờ 300ms sau khi người dùng ngừng gõ
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm]);
 
   // Handle clicks outside to close dropdown
   useEffect(() => {
@@ -92,7 +95,7 @@ function Navbar() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onFocus={() => {
-                  if (searchTerm.trim() !== '' && filteredMovies.length > 0) {
+                  if (searchTerm.trim() !== '') {
                     setIsDropdownVisible(true);
                   }
                 }}
@@ -107,16 +110,22 @@ function Navbar() {
 
             {isDropdownVisible && (
               <div className="search-results-dropdown">
-                {filteredMovies.slice(0, 5).map(movie => (
-                  <div 
-                    key={movie.id} 
-                    className="search-result-item"
-                    onClick={() => handleMovieSelect(movie.id)}
-                  >
-                    <img src={movie.posterUrl} alt={movie.tenPhim} className="search-result-poster" />
-                    <span className="search-result-title">{movie.tenPhim}</span>
-                  </div>
-                ))}
+                {isSearching ? (
+                  <div className="search-result-item">Đang tìm...</div>
+                ) : searchResults.length > 0 ? (
+                  searchResults.slice(0, 5).map(movie => (
+                    <div 
+                      key={movie.id} 
+                      className="search-result-item"
+                      onClick={() => handleMovieSelect(movie.id)}
+                    >
+                      <img src={movie.posterUrl} alt={movie.tenPhim} className="search-result-poster" />
+                      <span className="search-result-title">{movie.tenPhim}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="search-result-item">Không tìm thấy kết quả.</div>
+                )}
               </div>
             )}
           </div>

@@ -46,12 +46,19 @@ function AdminMovieManager() {
 
   // 1. useEffect: Load danh sách phim ngay khi component được render lần đầu
   useEffect(() => {
-    fetchMovies();
-  }, []);
+    // Tích hợp Debounce: Chờ 500ms sau khi người dùng ngừng gõ mới gọi API
+    const delayDebounceFn = setTimeout(() => {
+      fetchMovies();
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [filterName, filterCategory]);
 
   // Hàm gọi API lấy danh sách phim
   const fetchMovies = () => {
-    fetch(API_URL, { headers: getAuthHeaders() })
+    // Chuyển sang gọi API Search có Param từ Backend
+    const searchUrl = `${API_URL}/search?name=${encodeURIComponent(filterName)}&category=${encodeURIComponent(filterCategory)}`;
+    fetch(searchUrl, { headers: getAuthHeaders() })
       .then(res => {
         if (res.status === 403 || res.status === 401) {
            alert("Phiên đăng nhập hết hạn hoặc không có quyền!");
@@ -180,13 +187,6 @@ function AdminMovieManager() {
     });
   };
 
-  // Logic lọc phim tại client
-  const filteredMovies = movies.filter(movie => {
-    const matchName = movie.tenPhim?.toLowerCase().includes(filterName.toLowerCase());
-    const matchCategory = movie.theLoai?.toLowerCase().includes(filterCategory.toLowerCase());
-    return matchName && matchCategory;
-  });
-
   return (
     <div className="showtime-manager">
       {/* FORM NHẬP LIỆU */}
@@ -301,7 +301,7 @@ function AdminMovieManager() {
             </tr>
           </thead>
           <tbody>
-            {filteredMovies.map((movie) => (
+            {movies.map((movie) => (
               <tr key={movie.id} style={{ opacity: movie.isActive ? 1 : 0.5 }}>
                 <td>{movie.id}</td>
                 <td>

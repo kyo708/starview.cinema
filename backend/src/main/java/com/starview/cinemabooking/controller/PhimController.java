@@ -31,6 +31,12 @@ public class PhimController {
 		return ResponseEntity.ok(phimService.getMovieById(id));
 	}
 
+	// Public endpoint - Tìm kiếm phim đang chiếu theo từ khóa (Cho thanh tìm kiếm trên Header)
+	@GetMapping("/search")
+	public ResponseEntity<List<PhimDTO>> searchActiveMovies(@RequestParam String keyword) {
+		return ResponseEntity.ok(phimService.searchActiveMovies(keyword));
+	}
+
 	// Staff endpoints - Manage movie catalog
 
 	// Get all movies (including inactive) for staff management
@@ -38,6 +44,15 @@ public class PhimController {
 	@PreAuthorize("hasRole('STAFF')")
 	public ResponseEntity<List<PhimDTO>> getAllMovies() {
 		return ResponseEntity.ok(phimService.getAllMovies());
+	}
+
+	// Staff endpoint - Tìm kiếm phim có bộ lọc (Dành cho màn hình AdminMovieManager)
+	@GetMapping("/staff/search")
+	@PreAuthorize("hasRole('STAFF')")
+	public ResponseEntity<List<PhimDTO>> searchMoviesStaff(
+			@RequestParam(required = false) String name,
+			@RequestParam(required = false) String category) {
+		return ResponseEntity.ok(phimService.searchMoviesStaff(name, category));
 	}
 
 	// #19: Create new movie

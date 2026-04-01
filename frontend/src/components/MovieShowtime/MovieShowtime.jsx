@@ -83,8 +83,8 @@ function MovieShowtime() {
         const groupedData = showtimesList.reduce((acc, curr) => {
 
           const cinemaName = "StarView Cinemas";
-          // Trích xuất định dạng chiếu từ tên phòng (VD: "P01 - IMAX" -> "IMAX")
-          const format = curr.tenPhong && curr.tenPhong.includes('-') ? curr.tenPhong.split('-')[1].trim() : "2D Phụ Đề"; 
+          // Ưu tiên lấy trực tiếp loại phòng từ API (curr.loaiPhong), nếu không có mới dùng dự phòng
+          const format = curr.loaiPhong || (curr.tenPhong && curr.tenPhong.includes('-') ? curr.tenPhong.split('-')[1].trim() : "2D Phụ Đề"); 
           // Lấy chuỗi giờ (vd: "2024-05-26T19:30:00" -> "19:30")
           const time = curr.thoiGianChieu ? curr.thoiGianChieu.substring(11, 16) : "00:00"; 
 
