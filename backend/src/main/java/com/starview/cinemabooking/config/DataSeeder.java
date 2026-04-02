@@ -19,6 +19,7 @@ import com.starview.cinemabooking.model.NguoiDung;
 import com.starview.cinemabooking.repository.PhimRepository;
 import com.starview.cinemabooking.repository.PhongChieuRepository;
 import com.starview.cinemabooking.repository.SuatChieuRepository;
+import com.starview.cinemabooking.repository.DonHangRepository;
 import com.starview.cinemabooking.repository.GheSuatChieuRepository;
 import com.starview.cinemabooking.repository.KhuyenMaiRepository;
 import com.starview.cinemabooking.repository.NguoiDungRepository;
@@ -33,12 +34,14 @@ public class DataSeeder {
             SuatChieuRepository suatChieuRepository,
             GheSuatChieuRepository gheSuatChieuRepository,
             KhuyenMaiRepository khuyenMaiRepository,
+            DonHangRepository donHangRepository,
             PasswordEncoder passwordEncoder) {
         return args -> {
             // --- RESET DỮ LIỆU TOÀN BỘ (Theo yêu cầu) ---
             // Lưu ý: Phải xóa theo thứ tự từ bảng con đến bảng cha để tránh lỗi khóa ngoại
             System.out.println("🔄 Đang thực hiện reset toàn bộ dữ liệu...");
             gheSuatChieuRepository.deleteAll();
+            donHangRepository.deleteAll();      // <-- 2. THÊM DÒNG NÀY ĐỂ XÓA ĐƠN HÀNG
             suatChieuRepository.deleteAll();
             phongChieuRepository.deleteAll();
             phimRepository.deleteAll();
