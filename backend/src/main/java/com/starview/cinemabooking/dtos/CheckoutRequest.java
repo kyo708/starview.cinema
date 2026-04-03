@@ -19,4 +19,10 @@ public class CheckoutRequest {
 	private List<String> seatNames;
 
 	private String voucherCode;
+	
+	private Integer userId;         // Nếu là khách thì để null
+    
+	private String danhSachDichVu;  // vd., "Combo Solo x1, Milo x1"
+    
+	private Integer tongDiemSuDung; // vd., 450
 }

@@ -17,10 +17,12 @@ import com.starview.cinemabooking.dtos.EmailTicketRequest;
 import com.starview.cinemabooking.dtos.VoucherApplyResult;
 import com.starview.cinemabooking.model.DonHang;
 import com.starview.cinemabooking.model.GheSuatChieu;
+import com.starview.cinemabooking.model.NguoiDung;
 import com.starview.cinemabooking.model.Phim;
 import com.starview.cinemabooking.model.SuatChieu;
 import com.starview.cinemabooking.repository.DonHangRepository;
 import com.starview.cinemabooking.repository.GheSuatChieuRepository;
+import com.starview.cinemabooking.repository.NguoiDungRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +35,7 @@ public class TicketService {
     private final DonHangRepository donHangRepository;
     private final EmailService emailService;
     private final KhuyenMaiService khuyenMaiService;
+    private final NguoiDungRepository nguoiDungRepository;
 
     // US 2.2
     // #28: Chuyển trạng thái ghế và đặt thời gian giữ chỗ để thanh toán
@@ -196,7 +199,7 @@ public class TicketService {
         return donHang;
 	  }
 	
-	  @Transactional
+	@Transactional
     public DonHang createPendingOrder(CheckoutRequest request) {
         if (request.getSeatIds() == null || request.getSeatIds().isEmpty()) {
             throw new IllegalArgumentException("Vui lòng chọn ít nhất một ghế.");
@@ -211,6 +214,21 @@ public class TicketService {
             if (!"DANG_CHO".equals(ghe.getTrangThai()) || !Objects.equals(request.getSessionId(), ghe.getPhienGiaoDich())) {
                 throw new IllegalStateException("Ghế " + ghe.getId() + " đã bị mất quyền giữ chỗ.");
             }
+        }
+        
+        NguoiDung user = null;
+        int pointsToUse = request.getTongDiemSuDung() != null ? request.getTongDiemSuDung() : 0;
+        
+        if (request.getUserId() != null) {
+            user = nguoiDungRepository.findById(request.getUserId())
+                    .orElseThrow(() -> new IllegalArgumentException("Tài khoản thành viên không tồn tại."));
+            
+            // Kiểm tra số điểm tích lũy của người dùng, source-of-truth là backend thay vì frontend gửi gì về cũng nhận
+            if (pointsToUse > 0 && user.getDiemTichLuy() < pointsToUse) {
+                throw new IllegalStateException("Bạn không đủ điểm tích lũy để đổi các dịch vụ này.");
+            }
+        } else if (pointsToUse > 0) {
+            throw new IllegalStateException("Bạn phải đăng nhập để sử dụng điểm tích lũy.");
         }
 
         float totalPrice = 0.0f;
@@ -230,6 +248,10 @@ public class TicketService {
         donHang.setTongTien(voucherResult.getDiscountedPrice());
         donHang.setKhuyenMai(voucherResult.getKhuyenMai());
         
+        donHang.setNguoiDung(user);
+        donHang.setDanhSachDichVu(request.getDanhSachDichVu());
+        donHang.setTongDiemSuDung(pointsToUse);
+        
         // CRITICAL CHANGE: Status is now PENDING
         donHang.setTrangThaiThanhToan("PENDING"); 
         donHang.setThoiGianTao(LocalDateTime.now());
@@ -248,7 +270,7 @@ public class TicketService {
         return donHang;
     }
 	
-	  @Transactional
+	@Transactional
     public void finalizeOrderSuccess(Integer orderId) {
         DonHang donHang = donHangRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng"));
@@ -261,6 +283,25 @@ public class TicketService {
 
         // 1. Mark Order as Paid
         donHang.setTrangThaiThanhToan("SUCCESS");
+        
+        if (donHang.getNguoiDung() != null) {
+        	NguoiDung user = donHang.getNguoiDung();
+        	
+        	// 1. Trừ số điểm user dùng để đổi Perks (Đã được lock an toàn nhờ @Version)
+            int pointsSpent = donHang.getTongDiemSuDung() != null ? donHang.getTongDiemSuDung() : 0;
+            
+            // 2. Cộng điểm thưởng từ giao dịch (Ví dụ: 10 điểm cho mỗi 10,000đ chi tiêu)
+            // Lấy tổng tiền VNĐ chia cho 1000
+            int pointsEarned = (int) (donHang.getTongTien() / 1000); 
+            
+            // 3. Cập nhật số dư
+            user.setDiemTichLuy(user.getDiemTichLuy() - pointsSpent + pointsEarned);
+            
+            // Lưu user (Hibernate sẽ throw OptimisticLockingFailureException nếu có người xài điểm ở tab khác)
+            nguoiDungRepository.save(user); 
+            log.info("User {} spent {} points and earned {} points.", user.getEmail(), pointsSpent, pointsEarned);
+        }
+        
         donHangRepository.save(donHang);
 
         // 2. Lock the Seats Officially
@@ -300,7 +341,7 @@ public class TicketService {
         log.info("Order {} finalized successfully. Email triggered.", orderId);
     }
 	
-	  @Transactional
+	@Transactional
     public void finalizeOrderFailed(Integer orderId) {
         DonHang donHang = donHangRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng"));

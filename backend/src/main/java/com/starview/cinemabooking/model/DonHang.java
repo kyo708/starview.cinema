@@ -48,6 +48,14 @@ public class DonHang {
     
     @Column(name = "danh_sach_ghe")
     private String danhSachGhe; // A1, A2...
+    
+    // Tên các món đồ ăn kèm (VD: "Combo Solo x1, Milo x1")
+    @Column(name = "danh_sach_dich_vu")
+    private String danhSachDichVu;
+
+    // Tổng số điểm mà user ĐÃ DÙNG để đổi đồ ăn trong đơn này
+    @Column(name = "tong_diem_su_dung", nullable = false)
+    private Integer tongDiemSuDung = 0;
 
     // Relationship: DON_HANG ||--o{ GHE_SUAT_CHIEU : "chứa"
     @OneToMany(mappedBy = "donHang", fetch = FetchType.LAZY)
