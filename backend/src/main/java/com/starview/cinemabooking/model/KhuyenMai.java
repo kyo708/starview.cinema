@@ -41,6 +41,10 @@ public class KhuyenMai {
     @Column(name = "da_su_dung", nullable = false)
     private Integer daSuDung = 0;
 
+    // Voucher chỉ dành cho thành viên mới (chỉ áp dụng cho lần mua vé thành công đầu tiên)
+    @Column(name = "danh_cho_thanh_vien_moi", nullable = false)
+    private boolean danhChoThanhVienMoi = false;
+
     @Version
     @Column(name = "phien_ban")
     private int phienBan;

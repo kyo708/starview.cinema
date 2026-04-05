@@ -3,12 +3,18 @@ package com.starview.cinemabooking.service;
 import java.time.LocalDateTime;
 
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.starview.cinemabooking.dtos.VoucherApplyResult;
 import com.starview.cinemabooking.model.KhuyenMai;
+import com.starview.cinemabooking.model.NguoiDung;
+import com.starview.cinemabooking.repository.DonHangRepository;
 import com.starview.cinemabooking.repository.KhuyenMaiRepository;
+import com.starview.cinemabooking.repository.NguoiDungRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -16,6 +22,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class KhuyenMaiService {
     private final KhuyenMaiRepository khuyenMaiRepository;
+    private final DonHangRepository donHangRepository;
+    private final NguoiDungRepository nguoiDungRepository;
 
     @Transactional
     public VoucherApplyResult applyVoucher(String voucherCode, float originalPrice) {
@@ -30,6 +38,9 @@ public class KhuyenMaiService {
 
         KhuyenMai khuyenMai = khuyenMaiRepository.findByMaKhuyenMaiIgnoreCase(voucherCode.trim())
                 .orElseThrow(() -> new IllegalStateException("Mã khuyến mãi không hợp lệ."));
+
+        // Welcome voucher: chỉ dành cho tài khoản mua vé lần đầu (đơn SUCCESS đầu tiên)
+        validateWelcomeVoucherEligibility(khuyenMai);
 
         if (khuyenMai.getNgayHetHan() != null && khuyenMai.getNgayHetHan().isBefore(LocalDateTime.now())) {
             throw new IllegalStateException("Mã khuyến mãi đã hết hạn.");
@@ -69,6 +80,9 @@ public class KhuyenMaiService {
         KhuyenMai khuyenMai = khuyenMaiRepository.findByMaKhuyenMaiIgnoreCase(voucherCode.trim())
                 .orElseThrow(() -> new IllegalStateException("Mã khuyến mãi không hợp lệ."));
 
+        // Apply the same business rule in preview to avoid inconsistent UX
+        validateWelcomeVoucherEligibility(khuyenMai);
+
         if (khuyenMai.getNgayHetHan() != null && khuyenMai.getNgayHetHan().isBefore(LocalDateTime.now())) {
             throw new IllegalStateException("Mã khuyến mãi đã hết hạn.");
         }
@@ -86,6 +100,32 @@ public class KhuyenMaiService {
         result.setDiscountAmount(discountAmount);
         result.setDiscountedPrice(discountedPrice);
         return result;
+    }
+
+    private void validateWelcomeVoucherEligibility(KhuyenMai khuyenMai) {
+        if (khuyenMai == null || !khuyenMai.isDanhChoThanhVienMoi()) {
+            return;
+        }
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || authentication instanceof AnonymousAuthenticationToken) {
+            throw new IllegalStateException("Mã giảm giá này chỉ dành cho tài khoản mua vé lần đầu.");
+        }
+
+        String email = authentication.getName();
+        if (email == null || email.isBlank()) {
+            throw new IllegalStateException("Mã giảm giá này chỉ dành cho tài khoản mua vé lần đầu.");
+        }
+
+        NguoiDung nguoiDung = nguoiDungRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalStateException("Mã giảm giá này chỉ dành cho tài khoản mua vé lần đầu."));
+
+        long successfulOrderCount = donHangRepository.countByNguoiDungAndTrangThaiThanhToan(nguoiDung, "SUCCESS");
+        if (successfulOrderCount > 0) {
+            throw new IllegalStateException("Mã giảm giá này chỉ dành cho tài khoản mua vé lần đầu.");
+        }
     }
 
     private float calculateDiscountAmount(KhuyenMai khuyenMai, float originalPrice) {
