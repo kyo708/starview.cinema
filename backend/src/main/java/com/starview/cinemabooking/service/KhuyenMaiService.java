@@ -122,6 +122,16 @@ public class KhuyenMaiService {
         NguoiDung nguoiDung = nguoiDungRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalStateException("Mã giảm giá này chỉ dành cho tài khoản mua vé lần đầu."));
 
+        // Per-user one-time use: block if this user already used (or is using) this
+        // voucher
+        long usedOrPendingWithThisVoucher = donHangRepository.countByNguoiDungAndKhuyenMaiAndTrangThaiThanhToanIn(
+                nguoiDung,
+                khuyenMai,
+                java.util.List.of("PENDING", "SUCCESS"));
+        if (usedOrPendingWithThisVoucher > 0) {
+            throw new IllegalStateException("Mã giảm giá này chỉ dành cho tài khoản mua vé lần đầu.");
+        }
+
         long successfulOrderCount = donHangRepository.countByNguoiDungAndTrangThaiThanhToan(nguoiDung, "SUCCESS");
         if (successfulOrderCount > 0) {
             throw new IllegalStateException("Mã giảm giá này chỉ dành cho tài khoản mua vé lần đầu.");

@@ -206,7 +206,9 @@ public class DataSeeder {
                 welcome.setGiaTri(50000f);
                 welcome.setMaxGiamGia(null);
                 welcome.setNgayHetHan(expiry);
-                welcome.setGioiHanSuDung(1);
+                // Global limit: set high so many users can use it.
+                // Per-user one-time rule is enforced in KhuyenMaiService.
+                welcome.setGioiHanSuDung(1000000);
                 welcome.setDaSuDung(0);
                 welcome.setDanhChoThanhVienMoi(true);
 
