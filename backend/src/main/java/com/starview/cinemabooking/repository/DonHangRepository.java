@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import com.starview.cinemabooking.model.DonHang;
+import com.starview.cinemabooking.model.KhuyenMai;
 import com.starview.cinemabooking.model.NguoiDung;
 
 @Repository
@@ -13,4 +14,6 @@ public interface DonHangRepository extends JpaRepository<DonHang, Integer> {
 	List<DonHang> findByEmailKhachHang(String emailKhachHang);
 	List<DonHang> findBySdtKhachHang(String sdtKhachHang);
 	long countByNguoiDungAndTrangThaiThanhToan(NguoiDung nguoiDung, String trangThaiThanhToan);
+	long countByNguoiDungAndKhuyenMaiAndTrangThaiThanhToan(NguoiDung nguoiDung, KhuyenMai khuyenMai,
+			String trangThaiThanhToan);
 }

@@ -206,7 +206,7 @@ public class DataSeeder {
                 welcome.setGiaTri(50000f);
                 welcome.setMaxGiamGia(null);
                 welcome.setNgayHetHan(expiry);
-                welcome.setGioiHanSuDung(1);
+                welcome.setGioiHanSuDung(10000000); // Không giới hạn lượt sử dụng
                 welcome.setDaSuDung(0);
                 welcome.setDanhChoThanhVienMoi(true);
 
