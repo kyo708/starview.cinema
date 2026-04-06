@@ -9,6 +9,9 @@ import java.util.Objects;
 
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +24,7 @@ import com.starview.cinemabooking.model.Phim;
 import com.starview.cinemabooking.model.SuatChieu;
 import com.starview.cinemabooking.repository.DonHangRepository;
 import com.starview.cinemabooking.repository.GheSuatChieuRepository;
+import com.starview.cinemabooking.repository.NguoiDungRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TicketService {
     private final GheSuatChieuRepository gheSuatChieuRepository;
     private final DonHangRepository donHangRepository;
+    private final NguoiDungRepository nguoiDungRepository;
     private final EmailService emailService;
     private final KhuyenMaiService khuyenMaiService;
 
@@ -130,6 +135,9 @@ public class TicketService {
         VoucherApplyResult voucherResult = khuyenMaiService.applyVoucher(request.getVoucherCode(), totalPrice);
         // 4. Tạo đơn hàng (US #9 - AC #38)
         DonHang donHang = new DonHang();
+
+        attachAuthenticatedNguoiDung(donHang);
+
         donHang.setEmailKhachHang(request.getEmail());
         donHang.setSdtKhachHang(request.getPhone());
         donHang.setTongTienGoc(voucherResult.getOriginalPrice());
@@ -222,6 +230,9 @@ public class TicketService {
         VoucherApplyResult voucherResult = khuyenMaiService.applyVoucher(request.getVoucherCode(), totalPrice);
 
         DonHang donHang = new DonHang();
+
+        attachAuthenticatedNguoiDung(donHang);
+
         donHang.setEmailKhachHang(request.getEmail());
         donHang.setSdtKhachHang(request.getPhone());
 
@@ -341,5 +352,25 @@ public class TicketService {
         
         // Tất cả các ghế trong một đơn hàng đều có cùng thời gian hết hạn
         return seats.get(0).getThoiGianHetHanGiuCho();
+    }
+
+    private void attachAuthenticatedNguoiDung(DonHang donHang) {
+        if (donHang == null) {
+            return;
+        }
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || authentication instanceof AnonymousAuthenticationToken) {
+            return;
+        }
+
+        String email = authentication.getName();
+        if (email == null || email.isBlank()) {
+            return;
+        }
+
+        nguoiDungRepository.findByEmail(email).ifPresent(donHang::setNguoiDung);
     }
 }
