@@ -36,6 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TicketService {
     private final GheSuatChieuRepository gheSuatChieuRepository;
     private final DonHangRepository donHangRepository;
+    private final NguoiDungRepository nguoiDungRepository;
     private final EmailService emailService;
     private final KhuyenMaiService khuyenMaiService;
     private final NguoiDungRepository nguoiDungRepository;
@@ -136,6 +137,9 @@ public class TicketService {
         VoucherApplyResult voucherResult = khuyenMaiService.applyVoucher(request.getVoucherCode(), totalPrice);
         // 4. Tạo đơn hàng (US #9 - AC #38)
         DonHang donHang = new DonHang();
+
+        attachAuthenticatedNguoiDung(donHang);
+
         donHang.setEmailKhachHang(request.getEmail());
         donHang.setSdtKhachHang(request.getPhone());
         donHang.setTongTienGoc(voucherResult.getOriginalPrice());

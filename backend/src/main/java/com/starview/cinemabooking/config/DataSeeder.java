@@ -214,26 +214,18 @@ public class DataSeeder {
             if (khuyenMaiRepository.count() == 0) {
                 LocalDateTime expiry = LocalDateTime.of(2026, 12, 31, 23, 59, 59);
 
-                KhuyenMai save10 = new KhuyenMai();
-                save10.setMaKhuyenMai("SAVE10");
-                save10.setLoai("PERCENT");
-                save10.setGiaTri(10f);
-                save10.setMaxGiamGia(50000f);
-                save10.setNgayHetHan(expiry);
-                save10.setGioiHanSuDung(1);
-                save10.setDaSuDung(0);
+                KhuyenMai welcome = new KhuyenMai();
+                welcome.setMaKhuyenMai("WELCOME");
+                welcome.setLoai("FLAT");
+                welcome.setGiaTri(50000f);
+                welcome.setMaxGiamGia(null);
+                welcome.setNgayHetHan(expiry);
+                welcome.setGioiHanSuDung(1);
+                welcome.setDaSuDung(0);
+                welcome.setDanhChoThanhVienMoi(true);
 
-                KhuyenMai flat20000 = new KhuyenMai();
-                flat20000.setMaKhuyenMai("FLAT20000");
-                flat20000.setLoai("FLAT");
-                flat20000.setGiaTri(20000f);
-                flat20000.setMaxGiamGia(null);
-                flat20000.setNgayHetHan(expiry);
-                flat20000.setGioiHanSuDung(1);
-                flat20000.setDaSuDung(0);
-
-                khuyenMaiRepository.saveAll(Arrays.asList(save10, flat20000));
-                System.out.println("✅ Mock voucher data successfully seeded!");
+                khuyenMaiRepository.save(welcome);
+                System.out.println("✅ Welcome voucher WELCOME seeded (new members only)!");
             }
 
             // --- TẠO SUẤT CHIẾU MẪU ---
