@@ -9,6 +9,9 @@ import java.util.Objects;
 
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -216,20 +219,19 @@ public class TicketService {
             }
         }
         
-        NguoiDung user = null;
+        // --- UNIFIED SECURITY & MEMBERSHIP CHECK ---
+        NguoiDung user = getAuthenticatedUser(); // Get user securely from JWT
         int pointsToUse = request.getTongDiemSuDung() != null ? request.getTongDiemSuDung() : 0;
-        
-        if (request.getUserId() != null) {
-            user = nguoiDungRepository.findById(request.getUserId())
-                    .orElseThrow(() -> new IllegalArgumentException("Tài khoản thành viên không tồn tại."));
-            
-            // Kiểm tra số điểm tích lũy của người dùng, source-of-truth là backend thay vì frontend gửi gì về cũng nhận
+
+        if (user != null) {
+            // Kiểm tra điểm tích lũy
             if (pointsToUse > 0 && user.getDiemTichLuy() < pointsToUse) {
                 throw new IllegalStateException("Bạn không đủ điểm tích lũy để đổi các dịch vụ này.");
             }
         } else if (pointsToUse > 0) {
             throw new IllegalStateException("Bạn phải đăng nhập để sử dụng điểm tích lũy.");
         }
+        // -------------------------------------------
 
         float totalPrice = 0.0f;
         for (GheSuatChieu ghe : seats) {
@@ -240,6 +242,7 @@ public class TicketService {
         VoucherApplyResult voucherResult = khuyenMaiService.applyVoucher(request.getVoucherCode(), totalPrice);
 
         DonHang donHang = new DonHang();
+        
         donHang.setEmailKhachHang(request.getEmail());
         donHang.setSdtKhachHang(request.getPhone());
 
@@ -382,5 +385,21 @@ public class TicketService {
         
         // Tất cả các ghế trong một đơn hàng đều có cùng thời gian hết hạn
         return seats.get(0).getThoiGianHetHanGiuCho();
+    }
+    
+    private NguoiDung getAuthenticatedUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || authentication instanceof AnonymousAuthenticationToken) {
+            return null;
+        }
+
+        String email = authentication.getName();
+        if (email == null || email.isBlank()) {
+            return null;
+        }
+
+        return nguoiDungRepository.findByEmail(email).orElse(null);
     }
 }
