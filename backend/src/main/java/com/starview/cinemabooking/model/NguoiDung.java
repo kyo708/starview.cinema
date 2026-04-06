@@ -1,5 +1,6 @@
 package com.starview.cinemabooking.model;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import jakarta.persistence.*;
@@ -27,6 +28,9 @@ public class NguoiDung {
 
     @Column(name = "so_dien_thoai")
     private String soDienThoai;
+    
+    @Column(name = "ngay_sinh")
+    private LocalDate ngaySinh;
 
     // Added to support Spring Security RBAC
     @Column(name = "vai_tro", nullable = false)
