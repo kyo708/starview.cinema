@@ -171,7 +171,9 @@ function Navbar() {
                 </span>
                 {isUserDropdownVisible && (
                   <div className="user-dropdown-menu">
-                    <div className="user-dropdown-item">Hồ sơ của tôi</div>
+                    <div className="user-dropdown-item" onClick={() => { navigate('/profile'); setIsUserDropdownVisible(false); }}>
+                      Hồ sơ của tôi
+                    </div>
                     <div className="user-dropdown-item text-danger" onClick={handleLogout}>Đăng xuất</div>
                   </div>
                 )}

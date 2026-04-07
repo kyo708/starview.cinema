@@ -368,3 +368,150 @@
   margin-bottom: 15px;
   margin-top: 0;
 }
+
+/* --- KẾT QUẢ THANH TOÁN (Trạng thái) --- */
+.payment-message-title.error {
+  color: #f44336;
+}
+
+.payment-message-title.success {
+  color: #4caf50;
+}
+
+.payment-message-text {
+  color: #ccc;
+  font-size: 1.1rem;
+  margin-bottom: 30px;
+}
+
+/* --- ĐỔI ĐIỂM NHẬN ĐỒ ĂN KÈM --- */
+.concession-section-title {
+  margin-top: 30px;
+}
+
+.concession-login-prompt {
+  font-size: 0.9rem;
+  color: #888;
+  margin-bottom: 20px;
+}
+
+.current-points-display {
+  color: #ffb400;
+  margin-bottom: 10px;
+  font-weight: 500;
+  font-size: 0.95rem;
+  background: rgba(255, 180, 0, 0.1);
+  padding: 10px 15px;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+.concession-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-top: 15px;
+  margin-bottom: 20px;
+}
+
+.concession-item {
+  display: flex;
+  align-items: center;
+  background: #1a1a1a;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #333;
+}
+
+.concession-img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-right: 15px;
+}
+
+.concession-info {
+  flex: 1;
+}
+
+.concession-name {
+  margin: 0 0 5px 0;
+  font-size: 0.95rem;
+  color: #fff;
+}
+
+.concession-points {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #ffb400;
+}
+
+.concession-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-qty {
+  border: none;
+  width: 25px;
+  height: 25px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.btn-qty.minus {
+  background: #333;
+}
+
+.btn-qty.minus:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-qty.minus:hover:not(:disabled) {
+  background: #444;
+}
+
+.btn-qty.plus {
+  background: #e32222;
+}
+
+.btn-qty.plus:hover {
+  background: #c11c1c;
+}
+
+.btn-qty.plus:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.qty-display {
+  color: #fff;
+  font-size: 0.9rem;
+  min-width: 15px;
+  text-align: center;
+}
+
+/* --- THỐNG KÊ ĐỔI ĐIỂM (Summary) --- */
+.points-summary-section {
+  margin-top: 10px;
+  border-top: 1px dashed #333;
+  padding-top: 10px;
+}
+
+.points-discount-amount {
+  color: #ffb400 !important;
+}
+
+.points-exchanged-items {
+  font-size: 0.85rem;
+  color: #aaa;
+  margin-top: 5px;
+}

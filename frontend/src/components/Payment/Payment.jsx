@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useLocation, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 import Ticket from '../Ticket/Ticket';
@@ -39,6 +39,10 @@ function Payment() {
   const [paymentMessage, setPaymentMessage] = useState(null); // Thay thế cho hộp thoại alert()
   const [voucherError, setVoucherError] = useState(''); // State cho lỗi voucher
 
+  const [concessions, setConcessions] = useState([]);
+  const [selectedConcessions, setSelectedConcessions] = useState({});
+  const [userPoints, setUserPoints] = useState(0); // State lưu điểm hiện tại của user
+
   // Hook đọc tham số URL để bắt sự kiện VNPay trả về
   const [searchParams] = useSearchParams();
   const isVerifyingVNPay = searchParams.has('vnp_ResponseCode');
@@ -57,6 +61,20 @@ function Payment() {
       try {
         const decoded = jwtDecode(token);
         if (decoded.sub) setEmail(decoded.sub); // JWT mặc định lưu email ở trường 'sub'
+        
+        // Gọi API lấy điểm Real-time từ Database thay vì lấy điểm cũ từ Token
+        fetch(`${baseUrl}/api/v1/auth/my-profile`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.diemTichLuy !== undefined) setUserPoints(data.diemTichLuy);
+        })
+        .catch(err => {
+          console.error("Lỗi lấy điểm real-time:", err);
+          // Fallback: nếu rớt mạng, dùng tạm điểm trong token
+          if (decoded.diemTichLuy !== undefined) setUserPoints(decoded.diemTichLuy);
+        });
       } catch (e) {
         console.error("Lỗi giải mã token:", e);
       }
@@ -70,6 +88,41 @@ function Payment() {
     if (token) headers['Authorization'] = `Bearer ${token}`;
     return headers;
   };
+
+  // Tải danh sách đồ ăn kèm từ Backend
+  useEffect(() => {
+    fetch(`${baseUrl}/api/v1/dich-vu`)
+      .then(res => res.json())
+      .then(data => setConcessions(data))
+      .catch(err => console.error("Lỗi tải danh sách dịch vụ:", err));
+  }, []);
+
+  const handleConcessionChange = (id, delta) => {
+    setSelectedConcessions(prev => {
+      const currentQty = prev[id] || 0;
+      const newQty = currentQty + delta;
+      if (newQty <= 0) {
+        const newState = { ...prev };
+        delete newState[id];
+        return newState;
+      }
+      return { ...prev, [id]: newQty };
+    });
+  };
+
+  const totalPointsUsed = useMemo(() => {
+    return Object.entries(selectedConcessions).reduce((total, [id, qty]) => {
+      const item = concessions.find(c => c.id === parseInt(id));
+      return total + (item ? item.diemDoi * qty : 0);
+    }, 0);
+  }, [selectedConcessions, concessions]);
+
+  const selectedConcessionsString = useMemo(() => {
+    return Object.entries(selectedConcessions).map(([id, qty]) => {
+      const item = concessions.find(c => c.id === parseInt(id));
+      return item ? `${item.tenDichVu} x${qty}` : '';
+    }).join(', ');
+  }, [selectedConcessions, concessions]);
 
   // useEffect 1: XỬ LÝ KHI VNPAY REDIRECT TRỞ LẠI FRONTEND
   useEffect(() => {
@@ -200,10 +253,10 @@ function Payment() {
     return (
       <div className="payment-container">
         <div className="payment-status-page">
-          <h2 style={{ color: paymentMessage.isError ? '#f44336' : '#4caf50' }}>
+          <h2 className={`payment-message-title ${paymentMessage.isError ? 'error' : 'success'}`}>
             {paymentMessage.isError ? 'Thanh toán không thành công' : 'Hoàn tất giao dịch'}
           </h2>
-          <p style={{ color: '#ccc', fontSize: '1.1rem', marginBottom: '30px' }}>{paymentMessage.text}</p>
+          <p className="payment-message-text">{paymentMessage.text}</p>
           <button className="btn-pay" onClick={() => navigate('/')}>Về trang chủ</button>
         </div>
       </div>
@@ -281,7 +334,9 @@ function Payment() {
           sessionId: sessionId, 
           email: email, 
           phone: phone,
-          voucherCode: isVoucherApplied ? voucherCode : null // Gửi mã voucher nếu đã áp dụng
+          voucherCode: isVoucherApplied ? voucherCode : null, // Gửi mã voucher nếu đã áp dụng
+          danhSachDichVu: selectedConcessionsString || null,
+          tongDiemSuDung: totalPointsUsed
         })
       });
 
@@ -367,6 +422,36 @@ function Payment() {
               />
             </div>
 
+            <h4 className="form-section-title concession-section-title">2. Đổi điểm nhận đồ ăn kèm</h4>
+            {!isLoggedIn ? (
+              <p className="concession-login-prompt">Vui lòng đăng nhập để sử dụng điểm tích lũy đổi đồ ăn kèm.</p>
+            ) : (
+              <>
+                <div className="current-points-display">
+                  ✨ Điểm tích luỹ của bạn: <strong>{userPoints.toLocaleString('vi-VN')}</strong> điểm
+                </div>
+                <div className="concession-grid">
+                  {concessions.map(item => (
+                    <div key={item.id} className="concession-item">
+                      <img src={item.hinhAnhUrl} alt={item.tenDichVu} className="concession-img" />
+                      <div className="concession-info">
+                        <h5 className="concession-name">{item.tenDichVu}</h5>
+                        <p className="concession-points">{item.diemDoi} điểm</p>
+                      </div>
+                      <div className="concession-controls">
+                        <button type="button" className="btn-qty minus" onClick={() => handleConcessionChange(item.id, -1)} disabled={!selectedConcessions[item.id]}>-</button>
+                        <span className="qty-display">{selectedConcessions[item.id] || 0}</span>
+                        <button 
+                          type="button" className="btn-qty plus" onClick={() => handleConcessionChange(item.id, 1)}
+                          disabled={(totalPointsUsed + item.diemDoi) > userPoints} // Chặn nếu cộng thêm món này làm vượt quá tổng điểm đang có
+                        >+</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
             {/* Nút thanh toán sẽ disable nếu chưa nhập đủ chuẩn form */}
             <button type="submit" className="btn-pay" disabled={isProcessing || !email || phone.length < 10}>
               {isProcessing ? 'Đang kết nối VNPay...' : `Thanh toán VNPay (${finalPrice?.toLocaleString('vi-VN')} ₫)`}
@@ -417,6 +502,13 @@ function Payment() {
               <p className="discount-amount"><span>Giảm giá</span>- {discountAmount?.toLocaleString('vi-VN')} ₫</p>
             </div>
           )}
+
+            {totalPointsUsed > 0 && (
+              <div className="summary-discount-details points-summary-section">
+                <p className="discount-amount points-discount-amount"><span>Điểm sử dụng</span>- {totalPointsUsed} điểm</p>
+                <p className="points-exchanged-items">Đổi: {selectedConcessionsString}</p>
+              </div>
+            )}
 
             <div className="total-price">
               <span>Thành tiền</span>

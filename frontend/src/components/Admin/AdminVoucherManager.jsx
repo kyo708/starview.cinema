@@ -98,7 +98,7 @@ function AdminVoucherManager() {
         <h3>Thêm Voucher Mới</h3>
         <form className="admin-form-grid" onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>Mã Code (VD: TET2024)</label>
+            <label>Mã Code (VD: TET2026)</label>
             <input type="text" name="maCode" required value={formData.maCode} onChange={handleInputChange} placeholder="Nhập mã voucher..." />
           </div>
 
