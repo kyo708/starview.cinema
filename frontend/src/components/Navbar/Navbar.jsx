@@ -105,7 +105,7 @@ function Navbar() {
         {/* NỬA TRÁI: Logo và Menu */}
         <div className="navbar-left">
           <div className="logo">
-            <h1>StarView<span className="star">*</span></h1>
+            <h1 style={{ cursor: 'pointer' }} onClick={() =>{navigate('/')}}>StarView<span className="star">*</span></h1>
           </div>
           
           <ul className="nav-links">
