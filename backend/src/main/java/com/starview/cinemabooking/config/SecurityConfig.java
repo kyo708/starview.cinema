@@ -46,7 +46,7 @@ public class SecurityConfig {
                         // Public endpoints
                         .requestMatchers("/auth/login/**").permitAll()
                         .requestMatchers("/auth/users/**").permitAll()
-                        .requestMatchers("/auth/register/**").hasRole("ADMIN")
+                        .requestMatchers("/auth/register/**").permitAll()
                         .requestMatchers("/bookings/**").permitAll()
                         .requestMatchers("/suat-chieu/**").permitAll()
                         .requestMatchers("/suat-chieu/*/ghe").permitAll() // Cho phép lấy danh sách ghế của suất chiếu
@@ -57,7 +57,7 @@ public class SecurityConfig {
                         // Staff endpoints require STAFF role
                         // Đưa quy tắc cụ thể lên trước: API staff bắt buộc phải có quyền STAFF
                         .requestMatchers("/phim/staff/**", "/phong-chieu/staff/**", "/suat-chieu/staff/**").hasAnyRole("STAFF", "ADMIN")
-                        .requestMatchers("/admin/**").hasRole("STAFF")
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         // Đưa quy tắc tổng quát xuống dưới: Các API phim khác (public) thì cho phép tất
                         // cả
                         .requestMatchers("/phim/**").permitAll()

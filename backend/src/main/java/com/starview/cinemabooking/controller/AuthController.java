@@ -42,9 +42,12 @@ public class AuthController {
         user.setHoTen(request.getHoTen());
         user.setEmail(request.getEmail());
         user.setMatKhau(passwordEncoder.encode(request.getMatKhau()));
-        user.setVaiTro(request.getVaiTro() != null ? request.getVaiTro() : "STAFF");
         user.setSoDienThoai(request.getSoDienThoai());
-
+        
+        // Bây giờ endpoint này chỉ tạo MEMBER. Tạo tk STAFF chuyển sang AdminController (tạo sau)
+        user.setVaiTro("MEMBER"); 
+        user.setDiemTichLuy(0); // Khởi tạo 0 điểm
+        
         nguoiDungRepository.save(user);
         return ResponseEntity.ok("User registered successfully");
     }

@@ -14,6 +14,7 @@ public class NguoiDungMapper {
 				nguoiDung.getEmail(),
 				nguoiDung.getMatKhau(),
 				nguoiDung.getSoDienThoai(),
+				nguoiDung.getNgaySinh(),
 				nguoiDung.getVaiTro());
 	}
 	
@@ -27,6 +28,7 @@ public class NguoiDungMapper {
 		nguoiDung.setEmail(nguoiDungDto.getEmail());
 		nguoiDung.setSoDienThoai(nguoiDungDto.getSoDienThoai());
 		nguoiDung.setMatKhau(nguoiDungDto.getMatKhau());
+		nguoiDung.setNgaySinh(nguoiDungDto.getNgaySinh());
 		nguoiDung.setVaiTro(nguoiDungDto.getVaiTro());
 		
 		return nguoiDung;
