@@ -61,7 +61,14 @@ public class DataSeeder {
                 adminUser.setEmail("admin@starview.com");
                 adminUser.setMatKhau(passwordEncoder.encode("123456"));
                 adminUser.setVaiTro("ADMIN");
-                nguoiDungRepository.saveAll(Arrays.asList(adminUser, staffUser));
+                
+                NguoiDung memberUser = new NguoiDung();
+                memberUser.setHoTen("Member Account");
+                memberUser.setEmail("member@starview.com");
+                memberUser.setMatKhau(passwordEncoder.encode("123456"));
+                memberUser.setVaiTro("MEMBER");
+                
+                nguoiDungRepository.saveAll(Arrays.asList(adminUser, staffUser, memberUser));
                 System.out.println("✅ Admin account created: admin@starview.com / 123456");
                 System.out.println("✅ Staff account created: staff@starview.com / 123456");
             }
@@ -206,7 +213,7 @@ public class DataSeeder {
                 welcome.setGiaTri(50000f);
                 welcome.setMaxGiamGia(null);
                 welcome.setNgayHetHan(expiry);
-                welcome.setGioiHanSuDung(1);
+                welcome.setGioiHanSuDung(10000000); // Không giới hạn lượt sử dụng
                 welcome.setDaSuDung(0);
                 welcome.setDanhChoThanhVienMoi(true);
 

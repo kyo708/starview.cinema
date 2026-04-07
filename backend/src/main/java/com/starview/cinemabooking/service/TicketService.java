@@ -100,6 +100,15 @@ public class TicketService {
                 ghe.setTrangThai("TRONG");
                 ghe.setPhienGiaoDich(null);
                 ghe.setThoiGianHetHanGiuCho(null);
+             
+                // THE FIX: Fail the abandoned order to unlock the user's voucher and points!
+                DonHang abandonedOrder = ghe.getDonHang();
+                if (abandonedOrder != null && "PENDING".equals(abandonedOrder.getTrangThaiThanhToan())) {
+                    abandonedOrder.setTrangThaiThanhToan("FAILED");
+                    donHangRepository.save(abandonedOrder);
+                }
+                
+                ghe.setDonHang(null);
             }
             gheSuatChieuRepository.saveAll(listGheHetHan);
             log.info("Mở {} ghế hết hạn giữ chỗ", listGheHetHan.size());
