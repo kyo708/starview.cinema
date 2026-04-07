@@ -35,7 +35,9 @@ function Login() {
         // Lưu token vào sessionStorage cho mọi user đăng nhập thành công
         sessionStorage.setItem('token', token);
 
-        if (decodedToken.role === 'STAFF' || decodedToken.role === 'ADMIN') {
+        // Đưa về chữ hoa và dùng includes để bắt được cả "admin", "ADMIN" hoặc "ROLE_ADMIN"
+        const userRole = decodedToken.role ? decodedToken.role.toUpperCase() : '';
+        if (userRole.includes('STAFF') || userRole.includes('ADMIN')) {
           navigate('/admin');
         } else {
           // Mặc định MEMBER hoặc các role khác trả về trang chủ

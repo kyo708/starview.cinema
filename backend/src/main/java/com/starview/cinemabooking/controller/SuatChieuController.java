@@ -40,13 +40,13 @@ public class SuatChieuController {
     private final SuatChieuService suatChieuService;
 
     @GetMapping("/staff")
-    @PreAuthorize("hasRole('STAFF')")
+    @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
     public ResponseEntity<List<SuatChieuDTO>> getAllShowtimes() {
         return ResponseEntity.ok(suatChieuService.getAllSuatChieuStaff());
     }
 
     @PostMapping("/staff")
-    @PreAuthorize("hasRole('STAFF')")
+    @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
     public ResponseEntity<SuatChieuCreateResponse> createShowtime(@Valid @RequestBody CreateSuatChieuRequest request) {
         SuatChieuCreateResponse response = suatChieuService.createSuatChieuWithSeats(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
