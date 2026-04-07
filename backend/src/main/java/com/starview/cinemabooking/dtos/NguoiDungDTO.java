@@ -1,5 +1,7 @@
 package com.starview.cinemabooking.dtos;
 
+import java.time.LocalDate;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,6 +21,8 @@ public class NguoiDungDTO {
 	private String matKhau;
 	
 	private String soDienThoai;
+	
+	private LocalDate ngaySinh;
 	
 	private String vaiTro;
 }
