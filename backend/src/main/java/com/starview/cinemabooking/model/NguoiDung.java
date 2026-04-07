@@ -31,6 +31,15 @@ public class NguoiDung {
     // Added to support Spring Security RBAC
     @Column(name = "vai_tro", nullable = false)
     private String vaiTro; 
+    
+    // NEW: Điểm thành viên
+    @Column(name = "diem_tich_luy", nullable = false)
+    private Integer diemTichLuy = 0;
+
+    // NEW: Optimistic Lock tránh exploit một user double-booking để dùng nhiều điểm hơn mình có 
+    @Version
+    @Column(name = "phien_ban")
+    private Integer phienBan;
 
     // Relationship: NGUOI_DUNG ||--o{ DON_HANG : "tạo"
     @OneToMany(mappedBy = "nguoiDung", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

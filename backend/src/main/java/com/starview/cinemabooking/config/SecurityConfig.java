@@ -46,7 +46,7 @@ public class SecurityConfig {
                         // Public endpoints
                         .requestMatchers("/auth/login/**").permitAll()
                         .requestMatchers("/auth/users/**").permitAll()
-                        .requestMatchers("/auth/register/**").hasRole("ADMIN")
+                        .requestMatchers("/auth/register/**").permitAll()
                         .requestMatchers("/bookings/**").permitAll()
                         .requestMatchers("/suat-chieu/**").permitAll()
                         .requestMatchers("/suat-chieu/*/ghe").permitAll() // Cho phép lấy danh sách ghế của suất chiếu

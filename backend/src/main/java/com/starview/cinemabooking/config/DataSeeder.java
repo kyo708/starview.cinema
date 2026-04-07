@@ -13,12 +13,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import com.starview.cinemabooking.model.Phim;
 import com.starview.cinemabooking.model.PhongChieu;
 import com.starview.cinemabooking.model.SuatChieu;
+import com.starview.cinemabooking.model.DichVuBanKem;
 import com.starview.cinemabooking.model.GheSuatChieu;
 import com.starview.cinemabooking.model.KhuyenMai;
 import com.starview.cinemabooking.model.NguoiDung;
 import com.starview.cinemabooking.repository.PhimRepository;
 import com.starview.cinemabooking.repository.PhongChieuRepository;
 import com.starview.cinemabooking.repository.SuatChieuRepository;
+import com.starview.cinemabooking.repository.DichVuBanKemRepository;
 import com.starview.cinemabooking.repository.DonHangRepository;
 import com.starview.cinemabooking.repository.GheSuatChieuRepository;
 import com.starview.cinemabooking.repository.KhuyenMaiRepository;
@@ -35,6 +37,7 @@ public class DataSeeder {
             GheSuatChieuRepository gheSuatChieuRepository,
             KhuyenMaiRepository khuyenMaiRepository,
             DonHangRepository donHangRepository,
+            DichVuBanKemRepository dichVuBanKemRepository,
             PasswordEncoder passwordEncoder) {
         return args -> {
             // --- RESET DỮ LIỆU TOÀN BỘ (Theo yêu cầu) ---
@@ -46,6 +49,7 @@ public class DataSeeder {
             phongChieuRepository.deleteAll();
             phimRepository.deleteAll();
             khuyenMaiRepository.deleteAll();
+            dichVuBanKemRepository.deleteAll();
 
             // --- TẠO TÀI KHOẢN STAFF MẪU ---
             // Chỉ tạo nếu chưa có tài khoản nào trong DB
@@ -62,15 +66,18 @@ public class DataSeeder {
                 adminUser.setMatKhau(passwordEncoder.encode("123456"));
                 adminUser.setVaiTro("ADMIN");
                 
+                // Thêm một tài khoản MEMBER có sẵn điểm để frontend dev test giỏ hàng
                 NguoiDung memberUser = new NguoiDung();
-                memberUser.setHoTen("Member Account");
+                memberUser.setHoTen("VIP Member");
                 memberUser.setEmail("member@starview.com");
                 memberUser.setMatKhau(passwordEncoder.encode("123456"));
                 memberUser.setVaiTro("MEMBER");
-                
+                memberUser.setDiemTichLuy(1500); // Tặng 1500 điểm test
+
                 nguoiDungRepository.saveAll(Arrays.asList(adminUser, staffUser, memberUser));
                 System.out.println("✅ Admin account created: admin@starview.com / 123456");
                 System.out.println("✅ Staff account created: staff@starview.com / 123456");
+                System.out.println("✅ Member account created: member@starview.com / 123456");
             }
 
             // --- TẠO DỮ LIỆU PHIM MẪU ---
@@ -277,6 +284,24 @@ public class DataSeeder {
                     gheSuatChieuRepository.saveAll(allSeats);
                     System.out.println("✅ Mock seats successfully generated for all showtimes!");
                 }
+            }
+            // --- TẠO PERKS / ĐỒ ĂN KÈM MẪU (NEW LOGIC) ---
+            if (dichVuBanKemRepository.count() == 0) {
+                DichVuBanKem b1 = new DichVuBanKem(null, "Bắp Thường", 300, "https://upload.wikimedia.org/wikipedia/commons/0/09/Popcorn02.jpg");
+                DichVuBanKem b2 = new DichVuBanKem(null, "Bắp Phô Mai", 350, "https://static.wixstatic.com/media/35f3d9_5b91c3b320af4d96b9ee85b67332965b~mv2.jpg/v1/fill/w_560,h_352,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/Image-empty-state.jpg");
+                DichVuBanKem b3 = new DichVuBanKem(null, "Bắp Caramel", 350, "https://cdn.eva.vn//upload/3-2013/images/2013-09-30/1380527354-8.jpg");
+                
+                DichVuBanKem d1 = new DichVuBanKem(null, "Coca Cola", 200, "https://img.asmedia.epimg.net/resizer/v2/DSWLWJ7BVJD25JQT7YTRI63ES4.jpg?auth=e5ecd62e9d7c277d574a06940a3e8a964507e07307948442af52764f398bbdcd&width=1200&height=1200&smart=true");
+                DichVuBanKem d2 = new DichVuBanKem(null, "Pepsi", 200, "https://ktmt.vnmediacdn.com/images/2022/05/09/13-1652060192-anh-1.jpg");
+                DichVuBanKem d3 = new DichVuBanKem(null, "Milo", 250, "https://lh5.googleusercontent.com/proxy/-apuGHWEhvIvc8ZMzVzzIg6-1FChCdgW2Co60VNUmobF2KbUcMirFO_9MwLcAVH2j2E7yoZJ5UA0Zbigztvv3BnXRwghJvXOyCTn6QrE_Q-nQci9lkFD5lyS");
+                DichVuBanKem d4 = new DichVuBanKem(null, "Sprite", 200, "https://as2.ftcdn.net/v2/jpg/18/67/70/11/1000_F_1867701190_YKrzqXvOQFFTBzdHcjc3LgszTF7vK3XA.jpg");
+                DichVuBanKem d5 = new DichVuBanKem(null, "7Up", 200, "https://c8.alamy.com/comp/2PPH09C/can-of-7-up-drink-in-crashed-ice-2PPH09C.jpg");
+                
+                DichVuBanKem c1 = new DichVuBanKem(null, "Combo Solo (1 Bắp + 1 Nước)", 450, "https://media.istockphoto.com/id/681903568/vi/anh/b%E1%BB%8Fng-ng%C3%B4-trong-h%E1%BB%99p-v%E1%BB%9Bi-cola.jpg?s=612x612&w=0&k=20&c=K3GZEiD0fB31ufVuEkJZsxOt8ZTm5YaMMr7Eh2-rKjI=");
+                DichVuBanKem c2 = new DichVuBanKem(null, "Combo Couple (1 Bắp Phô Mai + 2 Nước)", 750, "https://static.wixstatic.com/media/45c4d7_e4d4d8f5f94d41e38007ca35573dd15a~mv2.jpg/v1/fill/w_480,h_480,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/45c4d7_e4d4d8f5f94d41e38007ca35573dd15a~mv2.jpg");
+
+                dichVuBanKemRepository.saveAll(Arrays.asList(b1, b2, b3, d1, d2, d3, d4, d5, c1, c2));
+                System.out.println("✅ Mock Perks (Concessions) successfully seeded!");
             }
         };
     }
