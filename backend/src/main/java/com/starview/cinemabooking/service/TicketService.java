@@ -39,7 +39,6 @@ public class TicketService {
     private final NguoiDungRepository nguoiDungRepository;
     private final EmailService emailService;
     private final KhuyenMaiService khuyenMaiService;
-    private final NguoiDungRepository nguoiDungRepository;
 
     // US 2.2
     // #28: Chuyển trạng thái ghế và đặt thời gian giữ chỗ để thanh toán
@@ -102,6 +101,15 @@ public class TicketService {
                 ghe.setTrangThai("TRONG");
                 ghe.setPhienGiaoDich(null);
                 ghe.setThoiGianHetHanGiuCho(null);
+             
+                // THE FIX: Fail the abandoned order to unlock the user's voucher and points!
+                DonHang abandonedOrder = ghe.getDonHang();
+                if (abandonedOrder != null && "PENDING".equals(abandonedOrder.getTrangThaiThanhToan())) {
+                    abandonedOrder.setTrangThaiThanhToan("FAILED");
+                    donHangRepository.save(abandonedOrder);
+                }
+                
+                ghe.setDonHang(null);
             }
             gheSuatChieuRepository.saveAll(listGheHetHan);
             log.info("Mở {} ghế hết hạn giữ chỗ", listGheHetHan.size());
@@ -138,7 +146,9 @@ public class TicketService {
         // 4. Tạo đơn hàng (US #9 - AC #38)
         DonHang donHang = new DonHang();
 
-        attachAuthenticatedNguoiDung(donHang);
+        
+        NguoiDung user = getAuthenticatedUser();
+        donHang.setNguoiDung(user);
 
         donHang.setEmailKhachHang(request.getEmail());
         donHang.setSdtKhachHang(request.getPhone());

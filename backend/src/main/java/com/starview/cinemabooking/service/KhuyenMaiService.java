@@ -1,6 +1,8 @@
 package com.starview.cinemabooking.service;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -39,8 +41,13 @@ public class KhuyenMaiService {
         KhuyenMai khuyenMai = khuyenMaiRepository.findByMaKhuyenMaiIgnoreCase(voucherCode.trim())
                 .orElseThrow(() -> new IllegalStateException("Mã khuyến mãi không hợp lệ."));
 
+        NguoiDung nguoiDung = getAuthenticatedUserOrThrow();
+
+        // Mỗi tài khoản chỉ được dùng mỗi voucher một lần
+        validateSingleUsePerUser(nguoiDung, khuyenMai);
+
         // Welcome voucher: chỉ dành cho tài khoản mua vé lần đầu (đơn SUCCESS đầu tiên)
-        validateWelcomeVoucherEligibility(khuyenMai);
+        validateWelcomeVoucherEligibility(nguoiDung, khuyenMai);
 
         if (khuyenMai.getNgayHetHan() != null && khuyenMai.getNgayHetHan().isBefore(LocalDateTime.now())) {
             throw new IllegalStateException("Mã khuyến mãi đã hết hạn.");
@@ -80,8 +87,11 @@ public class KhuyenMaiService {
         KhuyenMai khuyenMai = khuyenMaiRepository.findByMaKhuyenMaiIgnoreCase(voucherCode.trim())
                 .orElseThrow(() -> new IllegalStateException("Mã khuyến mãi không hợp lệ."));
 
+        NguoiDung nguoiDung = getAuthenticatedUserOrThrow();
+
         // Apply the same business rule in preview to avoid inconsistent UX
-        validateWelcomeVoucherEligibility(khuyenMai);
+        validateSingleUsePerUser(nguoiDung, khuyenMai);
+        validateWelcomeVoucherEligibility(nguoiDung, khuyenMai);
 
         if (khuyenMai.getNgayHetHan() != null && khuyenMai.getNgayHetHan().isBefore(LocalDateTime.now())) {
             throw new IllegalStateException("Mã khuyến mãi đã hết hạn.");
@@ -102,30 +112,43 @@ public class KhuyenMaiService {
         return result;
     }
 
-    private void validateWelcomeVoucherEligibility(KhuyenMai khuyenMai) {
+    private void validateWelcomeVoucherEligibility(NguoiDung nguoiDung, KhuyenMai khuyenMai) {
         if (khuyenMai == null || !khuyenMai.isDanhChoThanhVienMoi()) {
             return;
         }
 
+        // Block if they have ANY past successful orders, OR a pending order right now
+        List<String> blockingStatuses = Arrays.asList("SUCCESS", "PENDING");
+        long successfulOrderCount = donHangRepository.countByNguoiDungAndTrangThaiThanhToanIn(nguoiDung, blockingStatuses);
+        if (successfulOrderCount > 0) {
+            throw new IllegalStateException("Mã giảm giá này chỉ dành cho tài khoản mua vé lần đầu.");
+        }
+    }
+
+    private void validateSingleUsePerUser(NguoiDung nguoiDung, KhuyenMai khuyenMai) {
+    	List<String> blockingStatuses = Arrays.asList("SUCCESS", "PENDING");
+    	long usedCount = donHangRepository.countByNguoiDungAndKhuyenMaiAndTrangThaiThanhToanIn(nguoiDung, khuyenMai,
+                blockingStatuses);
+        if (usedCount > 0) {
+            throw new IllegalStateException("Mã khuyến mãi này chỉ được dùng 1 lần cho mỗi tài khoản.");
+        }
+    }
+
+    private NguoiDung getAuthenticatedUserOrThrow() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null
                 || !authentication.isAuthenticated()
                 || authentication instanceof AnonymousAuthenticationToken) {
-            throw new IllegalStateException("Mã giảm giá này chỉ dành cho tài khoản mua vé lần đầu.");
+            throw new IllegalStateException("Vui lòng đăng nhập để sử dụng mã khuyến mãi.");
         }
 
         String email = authentication.getName();
         if (email == null || email.isBlank()) {
-            throw new IllegalStateException("Mã giảm giá này chỉ dành cho tài khoản mua vé lần đầu.");
+            throw new IllegalStateException("Vui lòng đăng nhập để sử dụng mã khuyến mãi.");
         }
 
-        NguoiDung nguoiDung = nguoiDungRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalStateException("Mã giảm giá này chỉ dành cho tài khoản mua vé lần đầu."));
-
-        long successfulOrderCount = donHangRepository.countByNguoiDungAndTrangThaiThanhToan(nguoiDung, "SUCCESS");
-        if (successfulOrderCount > 0) {
-            throw new IllegalStateException("Mã giảm giá này chỉ dành cho tài khoản mua vé lần đầu.");
-        }
+        return nguoiDungRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalStateException("Vui lòng đăng nhập để sử dụng mã khuyến mãi."));
     }
 
     private float calculateDiscountAmount(KhuyenMai khuyenMai, float originalPrice) {
