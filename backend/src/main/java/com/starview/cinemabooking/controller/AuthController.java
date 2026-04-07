@@ -71,7 +71,7 @@ public class AuthController {
         Map<String, Object> extraClaims = new HashMap<>();
         extraClaims.put("role", user.getVaiTro());
         extraClaims.put("userId", user.getId());
-        extraClaims.put("fullName", user.getHoTen());
+        extraClaims.put("hoTen", user.getHoTen());
 
         // 4. Generate the JWT (Satisfies US 1.1 Acceptance Criteria #12)
         String jwtToken = jwtUtils.generateToken(extraClaims, userDetails);

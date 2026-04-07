@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { jwtDecode } from 'jwt-decode';
 import Ticket from '../Ticket/Ticket';
 import '../SeatSelection/SeatSelection.css';
 import './Payment.css';
@@ -46,6 +47,29 @@ function Payment() {
   // State và Ref cho bộ đếm ngược trên trang Payment
   const [paymentCountdown, setPaymentCountdown] = useState(currentCountdown || 0);
   const paymentCountdownIntervalRef = useRef(null);
+
+  const isLoggedIn = !!sessionStorage.getItem('token');
+
+  // Tự động điền email nếu người dùng đã đăng nhập
+  useEffect(() => {
+    const token = sessionStorage.getItem('token');
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        if (decoded.sub) setEmail(decoded.sub); // JWT mặc định lưu email ở trường 'sub'
+      } catch (e) {
+        console.error("Lỗi giải mã token:", e);
+      }
+    }
+  }, []);
+
+  // Hàm tạo header kèm Token để Backend có thể định danh người dùng
+  const getAuthHeaders = () => {
+    const token = sessionStorage.getItem('token');
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    return headers;
+  };
 
   // useEffect 1: XỬ LÝ KHI VNPAY REDIRECT TRỞ LẠI FRONTEND
   useEffect(() => {
@@ -217,7 +241,7 @@ function Payment() {
     try {
       const response = await fetch(`${baseUrl}/api/v1/vouchers/preview`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           voucherCode: voucherCode,
           originalPrice: totalPrice // Gửi giá gốc để backend tính toán
@@ -250,9 +274,7 @@ function Payment() {
       // 1. TẠO ĐƠN HÀNG CHỜ THANH TOÁN (PENDING)
       const response = await fetch(`${baseUrl}/api/v1/bookings/checkout`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           seatIds: location.state.selectedSeatIds,
           seatNames: selectedSeats, 
@@ -316,10 +338,12 @@ function Payment() {
 
       <div className="payment-content">
         {/* THÔNG BÁO ĐĂNG KÝ THÀNH VIÊN */}
-        <div className="member-promo-banner">
-          <span>🌟 Đăng ký tài khoản thành viên để được tích lũy điểm khi mua vé!</span>
-          <Link to="/register" className="promo-link">Đăng ký ngay</Link>
-        </div>
+        {!isLoggedIn && (
+          <div className="member-promo-banner">
+            <span>🌟 Đăng ký tài khoản thành viên để được tích lũy điểm khi mua vé!</span>
+            <Link to="/register" className="promo-link">Đăng ký ngay</Link>
+          </div>
+        )}
 
         {/* CỘT TRÁI: FORM THANH TOÁN */}
         <div className="payment-form-section">

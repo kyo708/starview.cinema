@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import './AdminLayout.css';
 import AdminMovieManager from './AdminMovieManager';
 import AdminShowtimeManager from './AdminShowtimeManager';
+import AdminVoucherManager from './AdminVoucherManager';
 
 function AdminLayout() {
-  const [activeTab, setActiveTab] = useState('movies'); // 'movies' hoặc 'showtimes'
+  const [activeTab, setActiveTab] = useState('movies'); // 'movies', 'showtimes', hoặc 'vouchers'
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -37,6 +38,13 @@ function AdminLayout() {
             <span className="icon">📅</span> Quản lý Suất Chiếu
           </button>
             
+          <button 
+            className={`nav-item ${activeTab === 'vouchers' ? 'active' : ''}`}
+            onClick={() => setActiveTab('vouchers')}
+          >
+            <span className="icon">🎟️</span> Quản lý Voucher
+          </button>
+            
         </nav>
 
         <div className="sidebar-footer">
@@ -49,12 +57,14 @@ function AdminLayout() {
       {/* RIGHT CONTENT AREA */}
       <main className="admin-main-content">
         <header className="content-header">
-          <h1>{activeTab === 'movies' ? 'Quản Lý Phim' : 'Quản Lý Suất Chiếu'}</h1>
+          <h1>{activeTab === 'movies' ? 'Quản Lý Phim' : activeTab === 'showtimes' ? 'Quản Lý Suất Chiếu' : 'Quản Lý Voucher'}</h1>
           <div className="user-info">Staff Account 👤</div>
         </header>
         
         <div className="content-body">
-          {activeTab === 'movies' ? <AdminMovieManager /> : <AdminShowtimeManager />}
+          {activeTab === 'movies' && <AdminMovieManager />}
+          {activeTab === 'showtimes' && <AdminShowtimeManager />}
+          {activeTab === 'vouchers' && <AdminVoucherManager />}
         </div>
       </main>
     </div>

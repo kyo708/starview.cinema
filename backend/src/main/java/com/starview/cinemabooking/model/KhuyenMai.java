@@ -3,7 +3,10 @@ package com.starview.cinemabooking.model;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
+import jakarta.persistence.criteria.CriteriaBuilder.In;
 import lombok.*;
 
 @Entity
@@ -47,8 +50,11 @@ public class KhuyenMai {
 
     @Version
     @Column(name = "phien_ban")
-    private int phienBan;
+    private Integer phienBan;
 
+    @JsonIgnore 
     @OneToMany(mappedBy = "khuyenMai", fetch = FetchType.LAZY)
     private List<DonHang> donHangs;
+
+    
 }

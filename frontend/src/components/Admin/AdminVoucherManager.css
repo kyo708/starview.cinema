@@ -1,0 +1,115 @@
+/* Container chính của trang quản lý Voucher */
+.showtime-manager {
+  padding: 20px;
+  color: #333;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Card chứa form nhập liệu */
+.admin-card {
+  background: #fff;
+  padding: 25px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  margin-bottom: 20px;
+}
+
+.admin-card h3 {
+  margin-top: 0;
+  color: #e32222;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #f1f1f1;
+  padding-bottom: 10px;
+}
+
+/* Lưới chia cột cho Form */
+.admin-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #555;
+}
+
+.form-group input {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  transition: border-color 0.3s;
+}
+
+.form-group input:focus {
+  border-color: #e32222;
+  outline: none;
+}
+
+/* Nút Submit */
+.btn-primary-admin {
+  background-color: #e32222;
+  color: white;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.3s;
+}
+
+.btn-primary-admin:hover {
+  background-color: #c11c1c;
+}
+
+/* Bảng danh sách Voucher */
+.showtime-table-container {
+  overflow-x: auto;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.showtime-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 800px;
+}
+
+.showtime-table th, .showtime-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.showtime-table th {
+  background-color: #f8f9fa;
+  font-weight: 700;
+  color: #e32222;
+}
+
+.showtime-table tr:hover {
+  background-color: #f1f1f1;
+}
+
+/* Nút Hủy (Delete) */
+.btn-logout-sidebar {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.3s;
+}
+
+.btn-logout-sidebar:hover {
+  background-color: #c82333;
+}
