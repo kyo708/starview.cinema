@@ -1,6 +1,8 @@
 package com.starview.cinemabooking.service;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -115,15 +117,18 @@ public class KhuyenMaiService {
             return;
         }
 
-        long successfulOrderCount = donHangRepository.countByNguoiDungAndTrangThaiThanhToan(nguoiDung, "SUCCESS");
+        // Block if they have ANY past successful orders, OR a pending order right now
+        List<String> blockingStatuses = Arrays.asList("SUCCESS", "PENDING");
+        long successfulOrderCount = donHangRepository.countByNguoiDungAndTrangThaiThanhToanIn(nguoiDung, blockingStatuses);
         if (successfulOrderCount > 0) {
             throw new IllegalStateException("Mã giảm giá này chỉ dành cho tài khoản mua vé lần đầu.");
         }
     }
 
     private void validateSingleUsePerUser(NguoiDung nguoiDung, KhuyenMai khuyenMai) {
-        long usedCount = donHangRepository.countByNguoiDungAndKhuyenMaiAndTrangThaiThanhToan(nguoiDung, khuyenMai,
-                "SUCCESS");
+    	List<String> blockingStatuses = Arrays.asList("SUCCESS", "PENDING");
+    	long usedCount = donHangRepository.countByNguoiDungAndKhuyenMaiAndTrangThaiThanhToanIn(nguoiDung, khuyenMai,
+                blockingStatuses);
         if (usedCount > 0) {
             throw new IllegalStateException("Mã khuyến mãi này chỉ được dùng 1 lần cho mỗi tài khoản.");
         }

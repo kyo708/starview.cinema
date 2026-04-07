@@ -16,4 +16,6 @@ public interface DonHangRepository extends JpaRepository<DonHang, Integer> {
 	long countByNguoiDungAndTrangThaiThanhToan(NguoiDung nguoiDung, String trangThaiThanhToan);
 	long countByNguoiDungAndKhuyenMaiAndTrangThaiThanhToan(NguoiDung nguoiDung, KhuyenMai khuyenMai,
 			String trangThaiThanhToan);
+	long countByNguoiDungAndTrangThaiThanhToanIn(NguoiDung nguoiDung, List<String> trangThaiThanhToan);
+    long countByNguoiDungAndKhuyenMaiAndTrangThaiThanhToanIn(NguoiDung nguoiDung, KhuyenMai khuyenMai, List<String> trangThaiThanhToan);
 }
