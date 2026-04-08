@@ -43,13 +43,15 @@ public class DataSeeder {
             // --- RESET DỮ LIỆU TOÀN BỘ (Theo yêu cầu) ---
             // Lưu ý: Phải xóa theo thứ tự từ bảng con đến bảng cha để tránh lỗi khóa ngoại
             System.out.println("🔄 Đang thực hiện reset toàn bộ dữ liệu...");
-            gheSuatChieuRepository.deleteAll();
-            donHangRepository.deleteAll();      // <-- 2. THÊM DÒNG NÀY ĐỂ XÓA ĐƠN HÀNG
-            suatChieuRepository.deleteAll();
-            phongChieuRepository.deleteAll();
-            phimRepository.deleteAll();
-            khuyenMaiRepository.deleteAll();
-            dichVuBanKemRepository.deleteAll();
+            
+            // THE FIX: Use InBatch to bypass Optimistic Locking checks
+            gheSuatChieuRepository.deleteAllInBatch();
+            donHangRepository.deleteAllInBatch();      // <-- 2. THÊM DÒNG NÀY ĐỂ XÓA ĐƠN HÀNG
+            suatChieuRepository.deleteAllInBatch();
+            phongChieuRepository.deleteAllInBatch();
+            phimRepository.deleteAllInBatch();
+            khuyenMaiRepository.deleteAllInBatch();
+            dichVuBanKemRepository.deleteAllInBatch();
 
             // --- TẠO TÀI KHOẢN STAFF MẪU ---
             // Chỉ tạo nếu chưa có tài khoản nào trong DB
