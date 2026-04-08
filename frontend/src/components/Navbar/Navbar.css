@@ -161,18 +161,97 @@
   text-overflow: ellipsis;
 }
 
-/* Icon Đăng nhập */
+/* Khu vực Đăng nhập / Đăng ký */
+.auth-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 25px;
+}
+
 .login-icon {
   color: #fff;
-  width: 24px;
-  height: 24px;
-  margin-right: 25px;
+  width: 20px;
+  height: 20px;
   cursor: pointer;
   transition: color 0.2s;
 }
 
 .login-icon:hover {
   color: #ffb400;
+}
+
+.auth-link {
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: color 0.2s ease;
+  text-decoration: none;
+}
+
+.auth-link:hover {
+  color: #ffb400;
+}
+
+.auth-divider {
+  color: #555;
+  font-size: 0.9rem;
+}
+
+/* CSS cho User Profile đã đăng nhập */
+.user-profile-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.user-greeting {
+  color: #ffb400;
+  font-weight: 500;
+  font-size: 0.95rem;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s;
+}
+
+.user-greeting:hover {
+  color: #e6a200;
+}
+
+.user-dropdown-menu {
+  position: absolute;
+  top: 150%;
+  right: 0;
+  background-color: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  min-width: 160px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.user-dropdown-item {
+  padding: 12px 16px;
+  color: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.user-dropdown-item:hover {
+  background-color: #333;
+}
+
+.user-dropdown-item.text-danger {
+  color: #f44336;
+}
+
+.user-dropdown-item.text-danger:hover {
+  background-color: rgba(244, 67, 54, 0.1);
 }
 
 /* Nút Mua Vé */

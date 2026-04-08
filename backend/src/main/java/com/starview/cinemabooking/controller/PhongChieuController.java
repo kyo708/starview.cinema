@@ -22,7 +22,7 @@ public class PhongChieuController {
     private final PhongChieuService phongChieuService;
 
     @GetMapping("/staff")
-    @PreAuthorize("hasRole('STAFF')")
+    @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
     public ResponseEntity<List<PhongChieuDTO>> getAllRoomsForStaff() {
         return ResponseEntity.ok(phongChieuService.getAllRooms());
     }

@@ -8,6 +8,7 @@ import Register from './components/Register/Register.jsx';
 import ProtectedRoute from './ProtectedRoute.jsx';
 import SeatSelection from './components/SeatSelection/SeatSelection.jsx';
 import Payment from './components/Payment/Payment.jsx';
+import UserProfile from './components/MemberProfile/MemberProfile.jsx';
 
 import './App.css';
 
@@ -40,6 +41,14 @@ function App() {
           <Route path="/payment" element={
             <>
               <Payment />
+            </>
+          } />
+
+          {/* Route Hồ sơ người dùng */}
+          <Route path="/profile" element={
+            <>
+              <Navbar />
+              <UserProfile />
             </>
           } />
 
