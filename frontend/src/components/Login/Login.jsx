@@ -32,13 +32,16 @@ function Login() {
         // Giải mã token để lấy thông tin vai trò
         const decodedToken = jwtDecode(token);
 
-        // Chỉ cho phép STAFF đăng nhập vào trang admin
-        if (decodedToken.role === 'STAFF') {
-          // Lưu token vào sessionStorage để tự xóa khi đóng trình duyệt
-          sessionStorage.setItem('token', token);
+        // Lưu token vào sessionStorage cho mọi user đăng nhập thành công
+        sessionStorage.setItem('token', token);
+
+        // Đưa về chữ hoa và dùng includes để bắt được cả "admin", "ADMIN" hoặc "ROLE_ADMIN"
+        const userRole = decodedToken.role ? decodedToken.role.toUpperCase() : '';
+        if (userRole.includes('STAFF') || userRole.includes('ADMIN')) {
           navigate('/admin');
         } else {
-          setError('Bạn không có quyền truy cập vào trang này!');
+          // Mặc định MEMBER hoặc các role khác trả về trang chủ
+          navigate('/');
         }
       } else {
         // Phân loại lỗi để hiển thị thông báo phù hợp
@@ -58,7 +61,7 @@ function Login() {
   return (
     <div className="login-container">
       <form className="login-form" onSubmit={handleLogin}>
-        <h2 className="login-title">Staff Login</h2>
+        <h2 className="login-title">Đăng Nhập</h2>
         
         {error && <p className="error-msg">{error}</p>}
 
@@ -87,7 +90,7 @@ function Login() {
         <button type="submit" className="btn-login">ĐĂNG NHẬP</button>
 
         <p style={{marginTop: '20px', fontSize: '0.9rem'}}>
-          <Link to="/register">Đăng ký tài khoản cho nhân viên mới</Link>
+          <Link to="/register">Đăng ký thành viên mới</Link>
         </p>
       </form>
     </div>

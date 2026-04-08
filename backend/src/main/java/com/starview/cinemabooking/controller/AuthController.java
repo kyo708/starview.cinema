@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -71,7 +73,8 @@ public class AuthController {
         Map<String, Object> extraClaims = new HashMap<>();
         extraClaims.put("role", user.getVaiTro());
         extraClaims.put("userId", user.getId());
-        extraClaims.put("fullName", user.getHoTen());
+        extraClaims.put("hoTen", user.getHoTen());
+        extraClaims.put("diemTichLuy", user.getDiemTichLuy());
 
         // 4. Generate the JWT (Satisfies US 1.1 Acceptance Criteria #12)
         String jwtToken = jwtUtils.generateToken(extraClaims, userDetails);
@@ -81,6 +84,49 @@ public class AuthController {
         response.put("token", jwtToken);
         
         return ResponseEntity.ok(response);
+    }
+
+    // API lấy thông tin profile hiện tại (Để cập nhật điểm Real-time)
+    @GetMapping("/my-profile")
+    public ResponseEntity<Map<String, Object>> getMyProfile() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getName())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        
+        NguoiDung user = nguoiDungRepository.findByEmail(authentication.getName())
+            .orElseThrow(() -> new RuntimeException("User not found"));
+            
+        Map<String, Object> response = new HashMap<>();
+        response.put("hoTen", user.getHoTen());
+        response.put("email", user.getEmail());
+        response.put("soDienThoai", user.getSoDienThoai());
+        response.put("ngaySinh", user.getNgaySinh());
+        response.put("diemTichLuy", user.getDiemTichLuy());
+        
+        return ResponseEntity.ok(response);
+    }
+
+    // API cập nhật thông tin profile
+    @PutMapping("/my-profile")
+    public ResponseEntity<?> updateMyProfile(@RequestBody NguoiDung updateRequest) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getName())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        
+        NguoiDung user = nguoiDungRepository.findByEmail(authentication.getName())
+            .orElseThrow(() -> new RuntimeException("User not found"));
+            
+        if (updateRequest.getHoTen() != null) user.setHoTen(updateRequest.getHoTen());
+        if (updateRequest.getSoDienThoai() != null) user.setSoDienThoai(updateRequest.getSoDienThoai());
+        if (updateRequest.getNgaySinh() != null) user.setNgaySinh(updateRequest.getNgaySinh());
+        if (updateRequest.getMatKhau() != null && !updateRequest.getMatKhau().isEmpty()) {
+            user.setMatKhau(passwordEncoder.encode(updateRequest.getMatKhau()));
+        }
+        
+        nguoiDungRepository.save(user);
+        return ResponseEntity.ok(Map.of("message", "Cập nhật hồ sơ thành công"));
     }
 
     // API lấy danh sách tất cả tài khoản để kiểm tra (GET /api/v1/auth/users)
