@@ -44,10 +44,10 @@ public class KhuyenMaiService {
         NguoiDung nguoiDung = getAuthenticatedUserOrThrow();
 
         // Mỗi tài khoản chỉ được dùng mỗi voucher một lần
-        validateSingleUsePerUser(nguoiDung, khuyenMai);
+        validateSingleUsePerUser(nguoiDung, khuyenMai, true);
 
         // Welcome voucher: chỉ dành cho tài khoản mua vé lần đầu (đơn SUCCESS đầu tiên)
-        validateWelcomeVoucherEligibility(nguoiDung, khuyenMai);
+        validateWelcomeVoucherEligibility(nguoiDung, khuyenMai, true);
 
         if (khuyenMai.getNgayHetHan() != null && khuyenMai.getNgayHetHan().isBefore(LocalDateTime.now())) {
             throw new IllegalStateException("Mã khuyến mãi đã hết hạn.");
@@ -61,13 +61,15 @@ public class KhuyenMaiService {
         float discountAmount = calculateDiscountAmount(khuyenMai, originalPrice);
         float discountedPrice = originalPrice - discountAmount;
 
-        khuyenMai.setDaSuDung(khuyenMai.getDaSuDung() == null ? 1 : khuyenMai.getDaSuDung() + 1);
-
-        try {
-            khuyenMaiRepository.save(khuyenMai);
-        } catch (OptimisticLockingFailureException e) {
-            throw new IllegalStateException("Mã khuyến mãi vừa hết lượt sử dụng. Vui lòng thử lại.");
-        }
+//        khuyenMai.setDaSuDung(khuyenMai.getDaSuDung() == null ? 1 : khuyenMai.getDaSuDung() + 1);
+//
+//        try {
+//            khuyenMaiRepository.save(khuyenMai);
+//        } catch (OptimisticLockingFailureException e) {
+//            throw new IllegalStateException("Mã khuyến mãi vừa hết lượt sử dụng. Vui lòng thử lại.");
+//        }
+        // Fix lỗi Eager Update, applyVoucher chỉ tính giảm giá, check mã voucher, check quyền dùng voucher của thành viên
+        // Chuyển update daSuDung counter sang webhook VNPay (TicketService.finalizeOrderSuccess)
 
         result.setDiscountAmount(discountAmount);
         result.setDiscountedPrice(discountedPrice);
@@ -90,8 +92,8 @@ public class KhuyenMaiService {
         NguoiDung nguoiDung = getAuthenticatedUserOrThrow();
 
         // Apply the same business rule in preview to avoid inconsistent UX
-        validateSingleUsePerUser(nguoiDung, khuyenMai);
-        validateWelcomeVoucherEligibility(nguoiDung, khuyenMai);
+        validateSingleUsePerUser(nguoiDung, khuyenMai, false);
+        validateWelcomeVoucherEligibility(nguoiDung, khuyenMai, false);
 
         if (khuyenMai.getNgayHetHan() != null && khuyenMai.getNgayHetHan().isBefore(LocalDateTime.now())) {
             throw new IllegalStateException("Mã khuyến mãi đã hết hạn.");
@@ -112,21 +114,25 @@ public class KhuyenMaiService {
         return result;
     }
 
-    private void validateWelcomeVoucherEligibility(NguoiDung nguoiDung, KhuyenMai khuyenMai) {
+    private void validateWelcomeVoucherEligibility(NguoiDung nguoiDung, KhuyenMai khuyenMai, boolean isCheckout) {
         if (khuyenMai == null || !khuyenMai.isDanhChoThanhVienMoi()) {
             return;
         }
-
-        // Block if they have ANY past successful orders, OR a pending order right now
-        List<String> blockingStatuses = Arrays.asList("SUCCESS", "PENDING");
+        
+        // Nếu là Preview, chỉ check SUCCESS. Nếu là Checkout, check cả PENDING để chặn Hack Multi-Tab.
+        List<String> blockingStatuses = isCheckout 
+                ? Arrays.asList("SUCCESS", "PENDING") 
+                : Arrays.asList("SUCCESS");
         long successfulOrderCount = donHangRepository.countByNguoiDungAndTrangThaiThanhToanIn(nguoiDung, blockingStatuses);
         if (successfulOrderCount > 0) {
             throw new IllegalStateException("Mã giảm giá này chỉ dành cho tài khoản mua vé lần đầu.");
         }
     }
 
-    private void validateSingleUsePerUser(NguoiDung nguoiDung, KhuyenMai khuyenMai) {
-    	List<String> blockingStatuses = Arrays.asList("SUCCESS", "PENDING");
+    private void validateSingleUsePerUser(NguoiDung nguoiDung, KhuyenMai khuyenMai, boolean isCheckout) {
+    	List<String> blockingStatuses = isCheckout 
+                ? Arrays.asList("SUCCESS", "PENDING") 
+                : Arrays.asList("SUCCESS");
     	long usedCount = donHangRepository.countByNguoiDungAndKhuyenMaiAndTrangThaiThanhToanIn(nguoiDung, khuyenMai,
                 blockingStatuses);
         if (usedCount > 0) {

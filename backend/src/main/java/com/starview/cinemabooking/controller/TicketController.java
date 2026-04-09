@@ -132,4 +132,25 @@ public class TicketController {
         String status = ticketService.getOrderStatus(orderId);
         return ResponseEntity.ok(Map.of("status", status));
     }
+    
+    @PostMapping("/cancel-abandoned")
+    public ResponseEntity<?> cancelAbandonedOrder(@RequestBody Map<String, String> payload) {
+        try {
+            String bookingRef = payload.get("bookingRef"); // Ví dụ: "DH5"
+            String sessionId = payload.get("sessionId"); // Frontend MUST send this now
+            
+            if (bookingRef != null && bookingRef.startsWith("DH")) {
+                Integer orderId = Integer.parseInt(bookingRef.substring(2));
+                
+                // Chỉ hủy nếu đơn hàng thực sự đang PENDING
+                if ("PENDING".equals(ticketService.getOrderStatus(orderId))) {
+                	ticketService.cancelAbandonedButKeepSeats(orderId, sessionId);
+                    return ResponseEntity.ok(Map.of("message", "Đã hủy đơn hàng bị bỏ rơi thành công."));
+                }
+            }
+            return ResponseEntity.ok(Map.of("message", "Đơn hàng không ở trạng thái PENDING."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Yêu cầu không hợp lệ."));
+        }
+    }
 }
