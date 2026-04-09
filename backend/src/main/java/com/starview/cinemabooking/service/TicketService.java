@@ -20,11 +20,13 @@ import com.starview.cinemabooking.dtos.EmailTicketRequest;
 import com.starview.cinemabooking.dtos.VoucherApplyResult;
 import com.starview.cinemabooking.model.DonHang;
 import com.starview.cinemabooking.model.GheSuatChieu;
+import com.starview.cinemabooking.model.KhuyenMai;
 import com.starview.cinemabooking.model.NguoiDung;
 import com.starview.cinemabooking.model.Phim;
 import com.starview.cinemabooking.model.SuatChieu;
 import com.starview.cinemabooking.repository.DonHangRepository;
 import com.starview.cinemabooking.repository.GheSuatChieuRepository;
+import com.starview.cinemabooking.repository.KhuyenMaiRepository;
 import com.starview.cinemabooking.repository.NguoiDungRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -37,6 +39,7 @@ public class TicketService {
     private final GheSuatChieuRepository gheSuatChieuRepository;
     private final DonHangRepository donHangRepository;
     private final NguoiDungRepository nguoiDungRepository;
+    private final KhuyenMaiRepository khuyenMaiRepository;
     private final EmailService emailService;
     private final KhuyenMaiService khuyenMaiService;
 
@@ -252,6 +255,21 @@ public class TicketService {
             totalPrice += ghe.calculatePrice();
         }
         
+        // --- THE FIX: XỬ LÝ QUAY VỀ TỪ VNPAY ---
+        // Nếu các ghế này đang dính với một đơn hàng PENDING cũ của chính user này, 
+        // ta sẽ đánh dấu đơn cũ là FAILED để "nhả" voucher ra ngay lập tức.
+        DonHang oldOrder = seats.get(0).getDonHang();
+        if (oldOrder != null && "PENDING".equals(oldOrder.getTrangThaiThanhToan())) {
+            oldOrder.setTrangThaiThanhToan("FAILED");
+            donHangRepository.save(oldOrder);
+            
+            // Lệnh flush() CỰC KỲ QUAN TRỌNG: Ép Hibernate cập nhật Database ngay lập tức 
+            // thay vì đợi đến cuối transaction, để hàm applyVoucher bên dưới thấy voucher đã được nhả.
+            donHangRepository.flush(); 
+            log.info("Canceled old PENDING order {} because user re-initiated checkout.", oldOrder.getId());
+        }
+        // ------------------------------------------
+        
         // 2. THE FIX: Áp dụng voucher ở đây!
         VoucherApplyResult voucherResult = khuyenMaiService.applyVoucher(request.getVoucherCode(), totalPrice);
 
@@ -300,6 +318,15 @@ public class TicketService {
 
         // 1. Mark Order as Paid
         donHang.setTrangThaiThanhToan("SUCCESS");
+        
+        // --- NEW FIX: Update lượt sử dụng voucher khi đã thanh toán thành công ---
+        if (donHang.getKhuyenMai() != null) {
+            KhuyenMai km = donHang.getKhuyenMai();
+            km.setDaSuDung(km.getDaSuDung() == null ? 1 : km.getDaSuDung() + 1);
+            // Lưu lại số lượng voucher đã xài
+            khuyenMaiRepository.save(km); 
+        }
+        // ---------------------------------------------------------
         
         if (donHang.getNguoiDung() != null) {
         	NguoiDung user = donHang.getNguoiDung();
@@ -376,6 +403,29 @@ public class TicketService {
         }
         gheSuatChieuRepository.saveAll(seats);
         log.warn("Order {} failed/canceled. Seats released.", orderId);
+    }
+	
+	@Transactional
+    public void cancelAbandonedButKeepSeats(Integer orderId, String sessionId) {
+        DonHang donHang = donHangRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng"));
+
+        // 1. Fail the order to release the voucher and points
+        donHang.setTrangThaiThanhToan("FAILED");
+        donHangRepository.save(donHang);
+
+        // 2. Unlink the seats from the failed order, BUT keep them locked for this user!
+        List<GheSuatChieu> seats = gheSuatChieuRepository.findByDonHang(donHang);
+        for (GheSuatChieu ghe : seats) {
+            ghe.setDonHang(null); // Unlink so the voucher isn't tied to these seats anymore
+            
+            // TÁI GIA HẠN GIỮ CHỖ (Reset 5-minute timer)
+            ghe.setTrangThai("DANG_CHO");
+            ghe.setPhienGiaoDich(sessionId); 
+            ghe.setThoiGianHetHanGiuCho(LocalDateTime.now().plusMinutes(5));
+        }
+        gheSuatChieuRepository.saveAll(seats);
+        log.info("Order {} failed/abandoned. Seats kept locked for session {}.", orderId, sessionId);
     }
 
     @Transactional(readOnly = true)

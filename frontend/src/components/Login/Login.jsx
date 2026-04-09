@@ -72,7 +72,7 @@ function Login() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required 
-            placeholder="Nhập email của staff..."
+            placeholder="Nhập email của thành viên..."
           />
         </div>
 

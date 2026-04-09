@@ -54,6 +54,15 @@ function Payment() {
 
   const isLoggedIn = !!sessionStorage.getItem('token');
 
+  // THE FIX: Chuyên phục hồi Voucher từ Session Storage khi trang được load lại
+  useEffect(() => {
+    const savedCode = sessionStorage.getItem('STARVIEW_VOUCHER');
+    if (savedCode) {
+      // Gọi API để Backend tính lại giá mới nhất thay vì dùng giá chết
+      handleApplyVoucher(savedCode);
+    }
+  }, [totalPrice]); // <-- Quan trọng: Lắng nghe sự thay đổi của totalPrice
+
   // Tự động điền email nếu người dùng đã đăng nhập
   useEffect(() => {
     const token = sessionStorage.getItem('token');
@@ -138,6 +147,7 @@ function Payment() {
             // Xóa giỏ hàng và đếm ngược
             sessionStorage.removeItem('STARVIEW_CART');
             sessionStorage.removeItem('STARVIEW_COUNTDOWN');
+            sessionStorage.removeItem('STARVIEW_VOUCHER'); // <-- Thêm xóa voucher
 
             // Phục hồi lại data vé từ sessionStorage (do khi redirect sang VNPay React bị mất state)
             const savedTicketData = sessionStorage.getItem('TEMP_TICKET_DATA');
@@ -175,6 +185,7 @@ function Payment() {
       // Xóa các ghế đã chọn và countdown khỏi sessionStorage khi hết giờ
       sessionStorage.removeItem('STARVIEW_CART');
       sessionStorage.removeItem('STARVIEW_COUNTDOWN');
+      sessionStorage.removeItem('STARVIEW_VOUCHER'); // <-- Thêm dòng này để xóa voucher trong session
 
       // Ép backend nhả toàn bộ ghế dựa vào danh sách ID ghế đã lưu ở bước trước
       if (selectedSeatIds && selectedSeatIds.length > 0 && sessionId) {
@@ -219,6 +230,7 @@ function Payment() {
             alert("Thời gian giữ ghế đã hết. Vui lòng chọn lại ghế.");
             sessionStorage.removeItem('STARVIEW_CART');
             sessionStorage.removeItem('STARVIEW_COUNTDOWN');
+            sessionStorage.removeItem('STARVIEW_VOUCHER');
             navigate(`/phim/${movie.id}/seatselection?cinema=${cinemaName}&time=${showtime}&date=${showdate}&suatChieuId=${suatChieuId}`);
             return 0;
           }
@@ -234,6 +246,44 @@ function Payment() {
       }
     };
   }, [paymentCountdown, navigate, movie, cinemaName, showtime, showdate, suatChieuId, selectedSeatIds, sessionId, isVerifyingVNPay]);
+
+  // THE FIX: Phát hiện ấn nút "Back" và giữ nguyên trạng thái UI (Seamless Retry)
+  useEffect(() => {
+    const savedTicketDataStr = sessionStorage.getItem('TEMP_TICKET_DATA');
+    
+    if (savedTicketDataStr && !isVerifyingVNPay) {
+      try {
+        const savedData = JSON.parse(savedTicketDataStr);
+        if (savedData.bookingRef) {
+          
+          fetch(`${baseUrl}/api/v1/bookings/cancel-abandoned`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ 
+              bookingRef: savedData.bookingRef,
+              sessionId: sessionId // Lấy sessionId từ location.state để backend gia hạn ghế
+            })
+          })
+          .then(() => {
+            console.log("Đã hủy đơn PENDING nhưng giữ lại ghế trên UI.");
+            
+            // Xóa rác chuyển hướng VNPay, nhưng GIỮ LẠI STARVIEW_CART và STARVIEW_VOUCHER
+            sessionStorage.removeItem('TEMP_TICKET_DATA');
+            
+            // Khôi phục lại bộ đếm đếm ngược (reset lại 5 phút = 300 giây)
+            setPaymentCountdown(300); 
+            
+            // Báo lỗi nhẹ nhàng ngay dưới nút thanh toán thay vì che toàn bộ màn hình
+            setVoucherError("Giao dịch VNPay đã bị hủy. Bạn có thể thanh toán lại.");
+            setIsProcessing(false);
+          })
+          .catch(err => console.error("Lỗi khi hủy đơn abandoned:", err));
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, [isVerifyingVNPay, baseUrl, sessionId]);
 
   // 1. ƯU TIÊN SỐ 1: NẾU ĐÃ THANH TOÁN THÀNH CÔNG -> HIỂN THỊ POPUP VÉ
   // (Đặt trên cùng để bypass mọi màn hình loading và tránh crash do mất state)
@@ -287,8 +337,8 @@ function Payment() {
     );
   }
 
-  const handleApplyVoucher = async () => {
-    if (!voucherCode.trim()) return;
+  const handleApplyVoucher = async (codeToApply = voucherCode) => {
+    if (!codeToApply.trim()) return;
     setVoucherError(''); // Reset lỗi trước khi gọi API
 
     try {
@@ -296,7 +346,7 @@ function Payment() {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({
-          voucherCode: voucherCode,
+          voucherCode: codeToApply,
           originalPrice: totalPrice // Gửi giá gốc để backend tính toán
         })
       });
@@ -312,11 +362,31 @@ function Payment() {
       setFinalPrice(result.discountedPrice);
       setDiscountAmount(result.discountAmount);
       setIsVoucherApplied(true);
+      setVoucherCode(codeToApply);
+
+      // THE FIX: Lưu vào sessionStorage để phục hồi nếu khách bấm Back từ VNPay
+      // THE FIX: CHỈ LƯU MÃ CODE, KHÔNG LƯU TÍNH TOÁN!
+      sessionStorage.setItem('STARVIEW_VOUCHER', codeToApply);
 
     } catch (error) {
       // Hiển thị lỗi ngay dưới ô nhập voucher
       setVoucherError(error.message);
+      // Nếu API báo lỗi (vd: user vừa dùng ở tab khác), tự dọn dẹp cache
+      sessionStorage.removeItem('STARVIEW_VOUCHER');
+      setIsVoucherApplied(false);
+      setFinalPrice(totalPrice);
+      setDiscountAmount(0);
     }
+  };
+
+  // 3. Hàm gỡ voucher
+  const handleRemoveVoucher = () => {
+    setIsVoucherApplied(false);
+    setVoucherCode('');
+    setFinalPrice(totalPrice); // Trả về giá gốc
+    setDiscountAmount(0);
+    setVoucherError('');
+    sessionStorage.removeItem('STARVIEW_VOUCHER'); // Xóa khỏi cache
   };
 
   const handlePayment = async (e) => {
@@ -488,9 +558,15 @@ function Payment() {
               value={voucherCode} onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
               disabled={isVoucherApplied}
             />
-            <button type="button" onClick={handleApplyVoucher} disabled={isVoucherApplied || !voucherCode.trim()}>
-              {isVoucherApplied ? 'Đã áp dụng' : 'Áp dụng'}
-            </button>
+            {isVoucherApplied ? (
+              <button type="button" onClick={handleRemoveVoucher} style={{ backgroundColor: '#dc3545' }}>
+                Hủy bỏ
+              </button>
+            ) : (
+              <button type="button" onClick={() => handleApplyVoucher(voucherCode)} disabled={!voucherCode.trim()}>
+                Áp dụng
+              </button>
+            )}
           </div>
           {/* Hiển thị lỗi voucher nếu có */}
           {voucherError && <p className="voucher-error-text">{voucherError}</p>}
