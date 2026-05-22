@@ -30,7 +30,8 @@ COPY --from=builder /build/target/*.jar app.jar
 # 4. QUAN TRỌNG: ÉP RAM CHO JAVA
 ENV JAVA_OPTS="-Xmx256m -Xss512k -XX:MaxMetaspaceSize=128m"
 
-EXPOSE 8080
+
+EXPOSE ${PORT:-10000}
 
 # Chạy ứng dụng với các tùy chọn tối ưu RAM
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
