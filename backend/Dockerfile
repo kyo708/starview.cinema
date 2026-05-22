@@ -28,7 +28,7 @@ USER spring:spring
 COPY --from=builder /build/target/*.jar app.jar
 
 # 4. QUAN TRỌNG: ÉP RAM CHO JAVA
-ENV JAVA_OPTS="-Xmx256m -Xss512k -XX:MaxMetaspaceSize=128m"
+ENV JAVA_OPTS="-Xmx400m -Xss256k -XX:MaxMetaspaceSize=100m -XX:TieredStopAtLevel=1"
 
 
 EXPOSE ${PORT:-10000}
